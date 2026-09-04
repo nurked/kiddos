@@ -31,7 +31,7 @@ Not an emulator. Not a Linux distro. Not a browser app. A fantasy computer whose
 - Platforms: macOS (Apple Silicon + Intel), Windows 10/11, Linux (x86_64, aarch64/Raspberry Pi later).
 - Languages: English at launch. All strings externalized from day one so more can be added later (i18n is a later phase).
 - Input: keyboard only. No mouse. Ever.
-- Out of scope v1: multiplayer, cloud, accounts, graphics mode beyond text grid, real Linux.
+- Out of scope v1: multiplayer, cloud, accounts, real Linux. Graphics beyond the text grid is v1.1 (Phase 5).
 
 ---
 
@@ -70,6 +70,7 @@ Single process, single binary. Games and programs run as green-thread "processes
 - Cell grid → texture atlas of a bitmap font (IBM VGA 8x16 or Amstrad CPC font; ship both, `font` command switches).
 - 16-color CGA/EGA palette default; 256-color optional for games that ask.
 - CRT shader: curvature, scanlines, phosphor glow, slight bloom. Toggleable (`crt off`) — some kids will hate it, and accessibility matters.
+- Graphics mode (Phase 5) adds a 320×200 pixel layer under the text cells, through the same shader.
 - Target 60 fps, but the console is retained-mode: only redraw on dirty cells + shader pass.
 
 ### 4.3 Console API (the contract)
@@ -324,6 +325,27 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 - Kiosk hardening per §8, Raspberry Pi session image.
 - Installer/signing/notarization for mac + win.
 - **Exit**: v1.0 public.
+
+### Phase 5 — Graphics (5–6 weeks, after v1.0)
+
+The text grid stays the machine's identity; this phase adds one pixel
+layer under it, the way a home computer had a "graphics mode", and the
+one language every kid should meet on a screen: the turtle.
+
+- **Framebuffer**: 320×200, 16-color CGA palette (256-color optional, as §4.2 already allows), drawn through the same CRT shader. Integer scaling into the 4:3 letterbox. Text cells overlay it at 8×8, so 40×25 characters line up with pixels exactly; a program picks text mode, graphics mode, or both (HUD on top).
+- **Console API v2** (bump `API_VERSION`, keep v1 intact): `gfx_mode(on)`, `pixel`, `line`, `rect`, `fill_rect`, `circle`, `fill_circle`, `text(x, y, s, color)`, `clear(color)`, `palette(i, r, g, b)`, `sprite(id, w, h, data)`, `blit(id, x, y, flip)`, `sync()`. Drawing is batched until `sync`; one host call per frame, not per pixel, so BASIC and WASM programs can hit 30 fps.
+- **Bindings, all three**: EndBASIC's `GFX_PIXEL`, `GFX_LINE`, `GFX_RECT`, `GFX_CIRCLE` already exist in its Console trait and are no-ops today: implement them, add `SPRITE`/`BLIT`/`SYNC`. `kiddos.h` gains `kd_gfx_*`; the Go package and the `kiddos` WASM import module gain the same names.
+- **Sprites are files**: a `.spr` is text, one row per line, one hex digit per pixel (`.` transparent). `cat`, `edit` and `cp` work on them; no sprite editor is needed in v1.1, and a `sprite` viewer command shows one big.
+- **Turtle**: a LOGO-flavoured interpreter (`turtle`): `FORWARD 50`, `RIGHT 90`, `REPEAT 4 [ ... ]`, `PENUP`, `PENDOWN`, `COLOR`, `TO square ... END`. Fourth binding of the console API, tiny to build, the biggest payoff per line. Lessons 13 (a square, a house) and 14 (REPEAT and spirals). Programs are `.logo` files; `run house.logo` works like any other file.
+- **Screenshots**: `snap` writes the screen as a text PPM (`P3`) into the home folder; a kid can `cat` a picture and understand it.
+- **Cartridges**: `breakout` (BASIC, graphics), `turtle-garden` (draw to unlock the next flower), one sprite game in C with a `.spr` folder the kid can repaint.
+- **Exit**: v1.1. A kid draws a house with the turtle, repaints a sprite with `edit` and sees it change in the game, and a graphical BASIC game holds 30 fps on a Raspberry Pi 4.
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Per-pixel host calls too slow from WASM/BASIC | Games stutter | Batch until `sync`; blits over pixels; measure on the Pi first |
+| Scope creep into a game engine | Never ships | One resolution, 16 colors, no scrolling layers, no audio beyond `beep` |
+| Two screens to keep consistent (text + pixels) | Bugs in every program | Pixels are a layer under the same cell grid; `clear` clears both; the headless harness snapshots both |
 
 ### Later
 - Cartridge SDK docs + template repo. Community carts.
