@@ -17,7 +17,7 @@ Not an emulator. Not a Linux distro. Not a browser app. A fantasy computer whose
 
 1. **Unix vocabulary, pure.** `ls`, `cd`, `cat`, `mkdir`, `rm`, `man`. Never `dir`, never `type`. Skills must transfer to a real terminal.
 2. **Nothing is real.** No host FS access, no host processes, no network stack. The kid cannot break the family computer and cannot escape into it.
-3. **The machine is a character.** It speaks in first person, short sentences, kid register, two languages (EN/RU) from day one. Tone is part of the spec, not a polish pass.
+3. **The machine is a character.** It speaks in first person, short sentences, kid register. Tone is part of the spec, not a polish pass.
 4. **Everything is a file.** Games, lessons, man pages, the tutor's state, high scores. If it's in the VFS, the kid can `ls` it, `cat` it, `cp` it, and learn from that.
 5. **Cartridges, not plugins.** A game is a folder with a manifest. Adding a game never requires recompiling the app.
 6. **Robust over iterative.** Core (VFS, shell, console API) is designed once and versioned. Content iterates freely.
@@ -29,7 +29,7 @@ Not an emulator. Not a Linux distro. Not a browser app. A fantasy computer whose
 
 - Primary: children ~7–12 who can read. Secondary: parents who remember DOS/BBS/C64 and want to hand that down.
 - Platforms: macOS (Apple Silicon + Intel), Windows 10/11, Linux (x86_64, aarch64/Raspberry Pi later).
-- Languages: English, Russian at launch. All strings externalized from day one.
+- Languages: English at launch. All strings externalized from day one so more can be added later (i18n is a later phase).
 - Input: keyboard only. No mouse. Ever.
 - Out of scope v1: multiplayer, cloud, accounts, graphics mode beyond text grid, real Linux.
 
@@ -202,8 +202,8 @@ kiddos/
 │   └── kiddos-i18n/            # fluent bundles
 ├── app/                       # the binary
 ├── content/
-│   ├── man/{en,ru}/
-│   ├── lessons/{en,ru}/
+│   ├── man/en/
+│   ├── lessons/en/
 │   ├── carts/
 │   └── factory-drive/         # built into drive.kdd at build time
 ├── tools/
@@ -278,11 +278,11 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 - `snake`, `tetris`, `sokoban` — console-API showcases in BASIC.
 - `guess` — number guessing, first BASIC listing kids can `cat` and modify.
 - `vi-quest` — Vim Adventures clone: grid world, move with hjkl, learn `dd`, `yy`, `/search` as spells. Completion unlocks `/bin/vi`. Written in Rust as a builtin cart (needs modal editing engine).
-- `hangman-ru` / `hangman-en` — vocabulary, bilingual.
+- `hangman` — vocabulary.
 - `typing` — typing tutor, because speed is the gate to everything else.
 
 ### 9.4 Localization
-- `fluent` for UI strings; content dirs per language. `lang ru` switches everything including man pages and tutor. Kid can switch mid-session — bilingual families will use both.
+- `fluent`-style bundles for UI strings; content dirs per language. English only for now; adding a language later is content (a bundle plus man/lesson dirs), not code.
 
 ---
 
@@ -300,7 +300,6 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 ### Phase 1 — The Tutor (3–4 weeks)
 - `kiddos-tutor` state machine, lessons 1–10, progress, badges.
 - `edit`, scripts, variables, `/dev/speaker` with TTS on all three OSes.
-- Russian: UI + man + lessons.
 - `adventure` cartridge (shell-only).
 - **Exit**: v0.2. A kid with zero guidance reaches lesson 10 in a few sessions. Measure with the log.
 
@@ -340,7 +339,7 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 | Kiosk escape on macOS | Parents lose trust | Set expectations in docs; parent chord; Screen Time guidance; never claim "unbreakable" |
 | EndBASIC API churn / license fit | Phase 2 slip | Pin version, vendor fork, my_basic fallback |
 | Toolchain bundle size (C/Go/Pascal) | Bloat, install failures | Optional packs; prebuilt `.wasm` in carts; C first, Go/Pascal later |
-| Content is the product, and content is slow | v1 feels empty | Templates + CI checks; hire/recruit a teacher for lessons; write RU/EN in parallel |
+| Content is the product, and content is slow | v1 feels empty | Templates + checks; hire/recruit a teacher for lessons |
 | Kids find it boring after `ls` | Retention | Adventure cart in Phase 1, not Phase 2; every lesson ends with something funny/loud |
 | Scope creep toward "real Linux" | Never ships | Principle 2. Anything that needs a real kernel is a "Later" item |
 
