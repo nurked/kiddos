@@ -14,6 +14,12 @@
 # SKIP_NOTARIZE=1 signs but does not submit.
 #
 # Linux and Windows: tools/release-docker.sh.
+#
+# Publishing: the website (its own repo, kiddos.dev) takes these files
+# through scripts/publish-release.sh, which sorts them by name:
+#   KidDOS-<version>-<os>-<arch>.<ext>   os: macos|windows|linux, arch: arm64|x64
+#   c-<os>-<arch>.kdp, go-<os>-<arch>.kdp   toolchain packs
+# The universal macOS zip is uploaded under both macos-arm64 and macos-x64.
 set -e
 cd "$(dirname "$0")/.."
 VERSION=$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)"/\1/')
