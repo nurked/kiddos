@@ -31,7 +31,7 @@ Not an emulator. Not a Linux distro. Not a browser app. A fantasy computer whose
 - Platforms: macOS (Apple Silicon + Intel), Windows 10/11, Linux (x86_64, aarch64/Raspberry Pi later).
 - Languages: English at launch. All strings externalized from day one so more can be added later (i18n is a later phase).
 - Input: keyboard only. No mouse. Ever.
-- Out of scope v1: multiplayer, cloud, accounts, real Linux. Graphics beyond the text grid is v1.1 (Phase 5).
+- Out of scope v1: multiplayer, cloud, accounts, real Linux. Graphics is Phase 5.
 
 ---
 
@@ -70,7 +70,7 @@ Single process, single binary. Games and programs run as green-thread "processes
 - Cell grid → texture atlas of a bitmap font (IBM VGA 8x16 or Amstrad CPC font; ship both, `font` command switches).
 - 16-color CGA/EGA palette default; 256-color optional for games that ask.
 - CRT shader: curvature, scanlines, phosphor glow, slight bloom. Toggleable (`crt off`) — some kids will hate it, and accessibility matters.
-- Graphics mode (Phase 5) adds a 320×200 pixel layer under the text cells, through the same shader.
+- Pixel mode (Phase 5): a 320×200, 256-color, double-buffered framebuffer, exclusive with text mode, uploaded in place of the text raster through the same shader.
 - Target 60 fps, but the console is retained-mode: only redraw on dirty cells + shader pass.
 
 ### 4.3 Console API (the contract)
@@ -319,33 +319,32 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 - Port one existing open-source terminal roguelike to a `.wasm` cart as proof.
 - **Exit**: v0.4. `cc hello.c && ./hello` works on all three OSes.
 
-### Phase 4 — vi-quest & polish (4 weeks)
-- `vi-quest` cart + modal editor engine → unlocks `/bin/vi`.
-- Accessibility: `crt off`, large font, high-contrast palette, screen reader passthrough via TTS.
-- Kiosk hardening per §8, Raspberry Pi session image.
-- Installer/signing/notarization for mac + win.
-- **Exit**: v1.0 public.
+### Phase 4 — vi-quest (done)
+- Modal editor engine (`kiddos-vi`), `vi` registered locked.
+- `prison-escape` cart (`:q`, `:q!`, `:wq`) and `vi-quest` cart (ten lands: hjkl, w/b, 0/$, gg/G, x, dd, yy/p, /, i/a/Esc, :wq); finishing unlocks `/bin/vi`, remembered in `~/.unlocks`.
+- **Exit**: v0.5. A kid who has never seen vi leaves it, then earns it.
 
-### Phase 5 — Graphics (5–6 weeks, after v1.0)
-
-The text grid stays the machine's identity; this phase adds one pixel
-layer under it, the way a home computer had a "graphics mode", and the
-one language every kid should meet on a screen: the turtle.
-
-- **Framebuffer**: 320×200, 16-color CGA palette (256-color optional, as §4.2 already allows), drawn through the same CRT shader. Integer scaling into the 4:3 letterbox. Text cells overlay it at 8×8, so 40×25 characters line up with pixels exactly; a program picks text mode, graphics mode, or both (HUD on top).
-- **Console API v2** (bump `API_VERSION`, keep v1 intact): `gfx_mode(on)`, `pixel`, `line`, `rect`, `fill_rect`, `circle`, `fill_circle`, `text(x, y, s, color)`, `clear(color)`, `palette(i, r, g, b)`, `sprite(id, w, h, data)`, `blit(id, x, y, flip)`, `sync()`. Drawing is batched until `sync`; one host call per frame, not per pixel, so BASIC and WASM programs can hit 30 fps.
-- **Bindings, all three**: EndBASIC's `GFX_PIXEL`, `GFX_LINE`, `GFX_RECT`, `GFX_CIRCLE` already exist in its Console trait and are no-ops today: implement them, add `SPRITE`/`BLIT`/`SYNC`. `kiddos.h` gains `kd_gfx_*`; the Go package and the `kiddos` WASM import module gain the same names.
-- **Sprites are files**: a `.spr` is text, one row per line, one hex digit per pixel (`.` transparent). `cat`, `edit` and `cp` work on them; no sprite editor is needed in v1.1, and a `sprite` viewer command shows one big.
-- **Turtle**: a LOGO-flavoured interpreter (`turtle`): `FORWARD 50`, `RIGHT 90`, `REPEAT 4 [ ... ]`, `PENUP`, `PENDOWN`, `COLOR`, `TO square ... END`. Fourth binding of the console API, tiny to build, the biggest payoff per line. Lessons 13 (a square, a house) and 14 (REPEAT and spirals). Programs are `.logo` files; `run house.logo` works like any other file.
-- **Screenshots**: `snap` writes the screen as a text PPM (`P3`) into the home folder; a kid can `cat` a picture and understand it.
-- **Cartridges**: `breakout` (BASIC, graphics), `turtle-garden` (draw to unlock the next flower), one sprite game in C with a `.spr` folder the kid can repaint.
-- **Exit**: v1.1. A kid draws a house with the turtle, repaints a sprite with `edit` and sees it change in the game, and a graphical BASIC game holds 30 fps on a Raspberry Pi 4.
+### Phase 5 — Graphics (5–6 weeks)
+- **Pixel mode in the console**: 320×200 with a 256-color palette, double-buffered, exclusive with text mode (a program is in one or the other). 320×200 doubled is exactly the 640×400 text raster, so the renderer uploads the pixel buffer instead of the text raster and the CRT shader needs nothing. (320×240 is the 4:3 alternative if we ever drop the shared texture size.)
+- **API in all three bindings** (console API v2, v1 kept intact): `pixel`, `line`, `rect`, `fill`, `blit`, `palette`, `text` (our 8×8 font drawn into the buffer), `flip`. Drawing goes to the back buffer; `flip` shows it.
+- **Key down and key up events**, so games can hold a key. The host reports both; text mode keeps today's press-only `readkey`.
+- **BASIC gets `GFX_*`** by implementing EndBASIC's five `draw_*` console methods (`draw_pixel`, `draw_line`, `draw_rect`, `draw_rect_filled`, `draw_circle`), which are no-ops today.
+- **A paint cartridge** as the demo: brushes, colors, save to a file the kid can `cat`.
+- **Then Doom**: `doomgeneric` compiled with `cc` plus a freestanding mini-libc (malloc, string and math routines, file reads through `fs_read`), a per-cartridge memory cap in `cart.toml` (Doom needs more than the default 16 MB), and Freedoom or Chex Quest data so it ships without licensing questions.
+- **Exit**: v0.6. Paint runs; Doom runs at playable speed on the Mac; both from cartridges.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Per-pixel host calls too slow from WASM/BASIC | Games stutter | Batch until `sync`; blits over pixels; measure on the Pi first |
-| Scope creep into a game engine | Never ships | One resolution, 16 colors, no scrolling layers, no audio beyond `beep` |
-| Two screens to keep consistent (text + pixels) | Bugs in every program | Pixels are a layer under the same cell grid; `clear` clears both; the headless harness snapshots both |
+| Per-pixel host calls too slow from WASM/BASIC | Games stutter | Programs draw into their own memory and `blit` whole regions; `flip` is the only per-frame call |
+| Doom's libc surface is large | Weeks of shims | Start from doomgeneric's short platform layer; stub what Freedoom never calls; measure before adding |
+| Two modes to keep consistent | Bugs in every program | Exclusive modes: entering pixel mode saves the text screen, leaving restores it (the alt-screen path already exists) |
+
+### Phase 6 — Polish and release (4 weeks)
+The rest of what used to be Phase 4:
+- Accessibility: `crt off` (done), large font, high-contrast palette, screen reader passthrough via TTS.
+- Kiosk hardening per §8 (macOS presentation options, Windows keyboard hook, Linux session), Raspberry Pi session image.
+- Installer/signing/notarization for mac + win.
+- **Exit**: v1.0 public.
 
 ### Later
 - Cartridge SDK docs + template repo. Community carts.
