@@ -11,6 +11,10 @@ pub struct Paths {
     pub log: PathBuf,
     /// `.kdc` cartridges go in and out through here.
     pub carts: PathBuf,
+    /// Optional toolchain packs: `packs/c/bin/clang`.
+    pub packs: PathBuf,
+    /// Scratch space for `cc`.
+    pub build: PathBuf,
 }
 
 impl Paths {
@@ -32,6 +36,8 @@ impl Paths {
             parent_hash: dir.join("parent.hash"),
             log: dir.join("log.txt"),
             carts: dir.join("carts"),
+            packs: dir.join("packs"),
+            build: dir.join("build"),
             dir,
         }
     }

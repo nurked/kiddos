@@ -79,6 +79,15 @@ pub trait HostCaps: Send + Sync {
     fn cart_folder_hint(&self) -> String {
         "the cartridge folder".into()
     }
+    /// Is a wasm32 C compiler available? `Err` carries the explanation.
+    fn c_compiler_available(&self) -> Result<(), String> {
+        Err("this machine has no C compiler. A parent can add the C pack (see docs).".into())
+    }
+    /// Compile the given source files (name, bytes; `kiddos.h` included)
+    /// into one wasm module. `Err` carries the compiler's own output.
+    fn compile_c(&self, _files: &[(String, Vec<u8>)]) -> Result<Vec<u8>, String> {
+        Err("no C compiler".into())
+    }
 }
 
 /// A host that does nothing real. Used by the headless tool and tests: time

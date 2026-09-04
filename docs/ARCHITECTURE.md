@@ -1,4 +1,4 @@
-# Architecture notes (Phases 0–2)
+# Architecture notes (Phases 0–3)
 
 This records how the plan in `kiddos-plan.md` was realized and where it was
 bent. Read the plan first.
@@ -169,6 +169,38 @@ a plain variable (not `arr(i)`), a variable must be assigned before its
 first read in source order, and two sibling `FOR` loops nested inside
 another `FOR` make its compiler panic on duplicate exit labels, so such
 code lives in a `GOSUB` subroutine instead.
+
+## The WASM sandbox
+
+`kiddos-wasm` embeds wasmtime (40.x, the newest this Rust supports) with
+cranelift and nothing else: no WASI, no threads, no GC. A module gets one
+import module, `kiddos`, whose functions are the console API one to one
+(`print`, `put`, `getkey`, `readkey`, `readline`, `sleep`, `tick`,
+`beep`, `speak`, `random`, `exit`, `fs_read`, `fs_write`, ...). Keys are
+integers: a code point for printable keys, `0x110000 + n` for named
+keys, `0x120000 + letter` for Ctrl. `/usr/include/kiddos.h` on the
+drive mirrors all of it and is the entire C API: there is no libc.
+
+Limits: 16 MB of memory (`StoreLimits`), one instance, and epoch
+interruption. A ticker thread bumps the engine epoch every 10 ms; the
+deadline callback checks for a queued Ctrl-C or a kill and traps with
+`Interrupt`, so a `while (1)` loop stops like anything else. Traps and
+link errors are turned into one sentence ("The program reached outside
+its memory. (In C that is usually an array index...)").
+
+The kernel recognises the `\0asm` magic and runs such files through the
+`wasm` command, so `./hello.wasm` just works and cartridges can ship a
+`.wasm` entry.
+
+`cc` never runs a compiler inside the machine. Source files and
+`kiddos.h` go out through one `HostCaps` method and a `.wasm` comes back;
+the host runs a real clang (`packs/c/bin/clang` beside the drive, or
+`KIDDOS_CC`) with `--target=wasm32 -nostdlib -Wl,--no-entry
+-Wl,--export=main` in a scratch folder it deletes afterwards. Diagnostics
+are rewritten as "hello.c, line 3: expected ';'... Every statement ends
+with a semicolon."; `cc -v` shows clang's own words. Without the pack,
+`cc` says so and points at docs/PACKS.md. Bundling the toolchain, and
+the Go and Pascal packs, are still open.
 
 ## Decisions taken on the plan's open questions
 

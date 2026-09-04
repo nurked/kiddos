@@ -138,6 +138,81 @@ impl HostCaps for RealHost {
     fn cart_folder_hint(&self) -> String {
         self.paths.carts.display().to_string()
     }
+    fn c_compiler_available(&self) -> Result<(), String> {
+        self.find_clang().map(|_| ())
+    }
+    fn compile_c(&self, files: &[(String, Vec<u8>)]) -> Result<Vec<u8>, String> {
+        let clang = self.find_clang()?;
+        let stamp = format!("{}-{}", std::process::id(), self.now_ms());
+        let dir = self.paths.build.join(stamp);
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let mut sources = Vec::new();
+        for (name, data) in files {
+            let safe = std::path::Path::new(name)
+                .file_name()
+                .map(|f| f.to_string_lossy().to_string())
+                .unwrap_or_default();
+            if safe.is_empty() {
+                continue;
+            }
+            std::fs::write(dir.join(&safe), data).map_err(|e| e.to_string())?;
+            if safe.ends_with(".c") {
+                sources.push(safe);
+            }
+        }
+        let out = dir.join("out.wasm");
+        let mut cmd = std::process::Command::new(&clang);
+        cmd.current_dir(&dir)
+            .args([
+                "--target=wasm32",
+                "-O2",
+                "-nostdlib",
+                "-fno-builtin",
+                "-Wall",
+                "-Wno-unused-function",
+                "-I.",
+            ])
+            .args(["-Wl,--no-entry", "-Wl,--export=main", "-Wl,-z,stack-size=65536"])
+            .args(&sources)
+            .arg("-o")
+            .arg(&out);
+        let output = cmd
+            .output()
+            .map_err(|e| format!("could not run {}: {e}", clang.display()))?;
+        let text = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let result = if output.status.success() {
+            std::fs::read(&out).map_err(|e| e.to_string())
+        } else {
+            Err(text)
+        };
+        let _ = std::fs::remove_dir_all(&dir);
+        result
+    }
+}
+
+impl RealHost {
+    /// `KIDDOS_CC`, else `packs/c/bin/clang` beside the drive.
+    fn find_clang(&self) -> Result<std::path::PathBuf, String> {
+        if let Ok(p) = std::env::var("KIDDOS_CC") {
+            let p = std::path::PathBuf::from(p);
+            if p.exists() {
+                return Ok(p);
+            }
+            return Err(format!("KIDDOS_CC points at {}, which does not exist", p.display()));
+        }
+        let packed = self.paths.packs.join("c").join("bin").join("clang");
+        if packed.exists() {
+            return Ok(packed);
+        }
+        Err(format!(
+            "this machine has no C compiler yet. A parent installs the C pack into {} (a clang that can make wasm32; see docs/PACKS.md).",
+            self.paths.packs.join("c").display()
+        ))
+    }
 }
 
 #[cfg(unix)]

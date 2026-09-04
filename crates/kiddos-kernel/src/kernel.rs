@@ -357,6 +357,14 @@ impl Kernel {
                 return Err(SpawnError::NotExecutable(path));
             }
             let data = vfs.read(&path, &actor)?;
+            if data.starts_with(b"\0asm") {
+                let Some(cmd) = self.command("wasm") else {
+                    return Err(SpawnError::NotFound("wasm".into()));
+                };
+                let mut full = vec!["wasm".to_string(), path];
+                full.extend(argv.iter().skip(1).cloned());
+                return Ok((cmd, full));
+            }
             let first = data.split(|b| *b == b'\n').next().unwrap_or(&[]);
             let first = String::from_utf8_lossy(first).to_string();
             let interp = first
