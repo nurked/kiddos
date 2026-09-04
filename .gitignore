@@ -3,3 +3,5 @@
 *.kdd
 !content/**/*.kdd
 .DS_Store
+/dist
+tools/.notary-profile

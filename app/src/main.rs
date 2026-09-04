@@ -1,4 +1,5 @@
 //! The KidDOS application: window, event loop, drive persistence.
+#![cfg_attr(windows, windows_subsystem = "windows")]
 
 use kiddos_host::{config, keys, Paths, RealHost};
 use kiddos_kernel::{Child, HostRequest, Kernel, Vfs};

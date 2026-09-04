@@ -23,6 +23,10 @@ walkthrough of every shipped game, [docs/PACKS.md](docs/PACKS.md) for the C
 toolchain pack, and [docs/KID-SESSION.md](docs/KID-SESSION.md) for what to
 watch when a kid sits down.
 
+**Parents: read [docs/PARENTS.md](docs/PARENTS.md) first.** It takes over the
+screen and is meant to be hard to leave; the page says how to start it, set
+the password, and get out.
+
 ## Run it
 
 ```bash
