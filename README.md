@@ -13,8 +13,11 @@ explore, make files, read the manual, follow twelve lessons with a tutor that
 watches the shell, write with `edit`, program in BASIC, and play seven
 cartridges: a cave adventure whose rooms are folders, and guess, snake,
 hangman, typing, tetris and sokoban written in BASIC that the kid can read,
-copy and change. See [kiddos-plan.md](kiddos-plan.md) for the full plan and
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it is built.
+copy and change. See [kiddos-plan.md](kiddos-plan.md) for the full plan,
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it is built,
+[docs/cartridges/](docs/cartridges/README.md) for the cartridge format and a
+walkthrough of every shipped game, and [docs/KID-SESSION.md](docs/KID-SESSION.md)
+for what to watch when a kid sits down.
 
 ## Run it
 
