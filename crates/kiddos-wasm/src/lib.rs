@@ -114,8 +114,11 @@ fn run_inner(p: &Proc, bytes: &[u8]) -> anyhow::Result<i32> {
     };
     let result = (|| -> anyhow::Result<i32> {
         let instance = linker.instantiate(&mut store, &module)?;
-        if let Ok(main) = instance.get_typed_func::<(), i32>(&mut store, "main") {
-            return main.call(&mut store, ());
+        // clang's wasm target calls a no-argument main `__main_void`
+        for name in ["main", "__main_void"] {
+            if let Ok(main) = instance.get_typed_func::<(), i32>(&mut store, name) {
+                return main.call(&mut store, ());
+            }
         }
         if let Ok(start) = instance.get_typed_func::<(), ()>(&mut store, "_start") {
             start.call(&mut store, ())?;

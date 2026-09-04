@@ -26,3 +26,4 @@ kiddos-console.workspace = true
 
 [dev-dependencies]
 wat = "1"
+kiddos-host.workspace = true

@@ -142,3 +142,66 @@ fn programs_can_read_the_drive() {
     m.run("cat /usr/include/kiddos.h | grep -c KD_IMPORT");
     assert!(!m.screen().contains("\n0\n"), "{}", m.screen());
 }
+
+/// The real thing: clang on the host, the result in the sandbox. Runs only
+/// where a wasm-capable clang is reachable (`KIDDOS_CC`, or Homebrew LLVM
+/// with lld on a Mac); elsewhere it passes vacuously and says so.
+#[test]
+fn cc_compiles_the_example_and_it_runs() {
+    use kiddos_kernel::HostCaps;
+    if std::env::var("KIDDOS_CC").is_err() {
+        for candidate in [
+            "/opt/homebrew/opt/llvm/bin/clang",
+            "/usr/lib/llvm-18/bin/clang",
+            "/usr/bin/clang-18",
+        ] {
+            if std::path::Path::new(candidate).exists() {
+                std::env::set_var("KIDDOS_CC", candidate);
+                break;
+            }
+        }
+    }
+    let dir = std::env::temp_dir().join(format!("kiddos-cc-test-{}", std::process::id()));
+    let paths = kiddos_host::Paths::in_dir(dir.clone());
+    paths.ensure().unwrap();
+    let (tx, _rx) = std::sync::mpsc::channel();
+    let host = kiddos_host::RealHost::new(paths, tx, Box::new(|| {}));
+    if let Err(why) = host.c_compiler_available() {
+        eprintln!("skipping: {why}");
+        let _ = std::fs::remove_dir_all(&dir);
+        return;
+    }
+    let factory = kiddos_headless::factory_dir();
+    let hello = std::fs::read(factory.join("usr/share/examples/hello.c")).unwrap();
+    let header = std::fs::read(factory.join("usr/include/kiddos.h")).unwrap();
+    let wasm = host
+        .compile_c(&[("hello.c".into(), hello), ("kiddos.h".into(), header.clone())])
+        .expect("hello.c compiles");
+    assert!(wasm.starts_with(b"\0asm"));
+    let stars = std::fs::read(factory.join("usr/share/examples/stars.c")).unwrap();
+    host.compile_c(&[("stars.c".into(), stars), ("kiddos.h".into(), header.clone())])
+        .expect("stars.c compiles");
+    // a broken program gets a translated error
+    let bad = b"#include \"kiddos.h\"\nint main(void) { kd_print(\"hi\") return 0; }\n".to_vec();
+    let err = host
+        .compile_c(&[("bad.c".into(), bad), ("kiddos.h".into(), header)])
+        .unwrap_err();
+    let lines = kiddos_wasm::cc::humanize(&err);
+    assert!(
+        lines[0].contains("bad.c, line 2") && lines[0].contains("semicolon"),
+        "{lines:?}"
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+
+    let m = Machine::boot();
+    {
+        let mut vfs = m.kernel.vfs.lock();
+        vfs.write("/home/kid/hello.wasm", &wasm, &Actor::user("kid")).unwrap();
+        vfs.chmod("/home/kid/hello.wasm", 0o755, &Actor::user("kid")).unwrap();
+    }
+    m.run("clear");
+    m.run("./hello.wasm");
+    let s = m.screen();
+    assert!(s.contains("Hello from C!"), "{s}");
+    assert!(s.contains("The screen is 80 by 25 letters."), "{s}");
+}

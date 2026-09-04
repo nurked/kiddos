@@ -1638,6 +1638,7 @@ dependencies = [
  "kiddos-builtins",
  "kiddos-cart",
  "kiddos-console",
+ "kiddos-host",
  "kiddos-kernel",
  "kiddos-shell",
  "kiddos-tutor",

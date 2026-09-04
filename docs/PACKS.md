@@ -34,7 +34,7 @@ cc hello.c
 ```
 
 `cc` compiles with `--target=wasm32 -O2 -nostdlib -fno-builtin`, links with
-`--no-entry --export=main`, and includes only `/usr/include/kiddos.h`. No
+`--no-entry --export-all`, and includes only `/usr/include/kiddos.h`. No
 libc, no WASI: a program can print, draw, read keys, sleep, beep, speak,
 and read or write the kid's files. Nothing else exists.
 

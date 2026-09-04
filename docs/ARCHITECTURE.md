@@ -196,7 +196,8 @@ The kernel recognises the `\0asm` magic and runs such files through the
 `kiddos.h` go out through one `HostCaps` method and a `.wasm` comes back;
 the host runs a real clang (`packs/c/bin/clang` beside the drive, or
 `KIDDOS_CC`) with `--target=wasm32 -nostdlib -Wl,--no-entry
--Wl,--export=main` in a scratch folder it deletes afterwards. Diagnostics
+-Wl,--export-all` in a scratch folder it deletes afterwards (clang names a
+no-argument `main` `__main_void`; the runtime accepts both). Diagnostics
 are rewritten as "hello.c, line 3: expected ';'... Every statement ends
 with a semicolon."; `cc -v` shows clang's own words. Without the pack,
 `cc` says so and points at docs/PACKS.md. Bundling the toolchain, and

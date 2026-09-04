@@ -161,7 +161,18 @@ impl HostCaps for RealHost {
             }
         }
         let out = dir.join("out.wasm");
+        // clang finds wasm-ld on PATH; an app launched from a desktop icon
+        // has almost none, so add the usual places and clang's own folder.
+        let mut path = String::new();
+        if let Some(bin) = clang.parent() {
+            path.push_str(&bin.display().to_string());
+            path.push(':');
+        }
+        path.push_str(&self.paths.packs.join("c").join("bin").display().to_string());
+        path.push_str(":/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:");
+        path.push_str(&std::env::var("PATH").unwrap_or_default());
         let mut cmd = std::process::Command::new(&clang);
+        cmd.env("PATH", path);
         cmd.current_dir(&dir)
             .args([
                 "--target=wasm32",
@@ -172,7 +183,7 @@ impl HostCaps for RealHost {
                 "-Wno-unused-function",
                 "-I.",
             ])
-            .args(["-Wl,--no-entry", "-Wl,--export=main", "-Wl,-z,stack-size=65536"])
+            .args(["-Wl,--no-entry", "-Wl,--export-all", "-Wl,-z,stack-size=65536"])
             .args(&sources)
             .arg("-o")
             .arg(&out);
