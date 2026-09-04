@@ -11,6 +11,7 @@ members = [
     "crates/kiddos-tutor",
     "crates/kiddos-basic",
     "crates/kiddos-wasm",
+    "crates/kiddos-vi",
     "crates/kiddos-i18n",
     "crates/kiddos-render",
     "crates/kiddos-host",
@@ -37,6 +38,7 @@ kiddos-cart = { path = "crates/kiddos-cart" }
 kiddos-tutor = { path = "crates/kiddos-tutor" }
 kiddos-basic = { path = "crates/kiddos-basic" }
 kiddos-wasm = { path = "crates/kiddos-wasm" }
+kiddos-vi = { path = "crates/kiddos-vi" }
 kiddos-i18n = { path = "crates/kiddos-i18n" }
 kiddos-render = { path = "crates/kiddos-render" }
 kiddos-host = { path = "crates/kiddos-host" }

@@ -1,0 +1,13 @@
+[package]
+name = "kiddos-vi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "A vi: the modal editing engine, the vi command (earned by playing), vi-quest and Prison Escape."
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-console.workspace = true
+kiddos-vfs.workspace = true
+serde.workspace = true
+toml.workspace = true

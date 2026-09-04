@@ -120,9 +120,14 @@ pub fn launch(p: &Proc, name: &str, args: &[String]) -> Result<i32, String> {
     let m = load(p, name)?;
     let dir = dir_of(name);
     let entry = format!("{dir}/{}", m.entry);
-    if !p.fs().exists(&entry) {
+    // games written in Rust ship a folder (docs, levels) and name a command
+    let entry = if p.fs().exists(&entry) {
+        entry
+    } else if !m.entry.contains('/') && p.kernel().command(&m.entry).is_some() {
+        m.entry.clone()
+    } else {
         return Err(format!("{name} has no {} to run.", m.entry));
-    }
+    };
     let mut argv = vec![entry];
     argv.extend(args.iter().cloned());
     let mut s = Spawn::child_of(p, argv);

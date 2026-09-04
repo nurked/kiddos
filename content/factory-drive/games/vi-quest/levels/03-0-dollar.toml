@@ -1,0 +1,12 @@
+title = "The long halls"
+story = """
+0 (zero) jumps to the very start of the line. $ jumps to its end.
+j and k still change lines. Reach the X at the far end."""
+keys = ["0", "$", "j", "k"]
+goal = "reach"
+hint = "Go down with j, then $ to the end."
+done = "0 and $. Start and end of a line, in one press."
+map = """
+#@...................................................................#
+#....................................................................#
+#.....................................................................X"""

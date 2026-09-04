@@ -288,6 +288,9 @@ impl<'a> Shell<'a> {
     fn report_spawn_error(&self, name: &str, e: &SpawnError) {
         let p = self.p;
         match e {
+            SpawnError::NotFound(n) if p.kernel().is_locked(n) => {
+                p.eprintln(&p.t("locked-command", &[("cmd", n)]));
+            }
             SpawnError::NotFound(n) => {
                 p.eprintln(&p.t("unknown-command", &[("cmd", n)]));
                 if let Some(s) = self.suggest(n) {

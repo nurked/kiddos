@@ -1,0 +1,7 @@
+name = "vi-quest"
+title = "vi-quest"
+version = "0.1.0"
+author = "KidDOS"
+entry = "vi-quest"
+description = "learn vi's spells one land at a time; finishing unlocks vi"
+caps = ["speak", "sound"]

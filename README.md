@@ -15,7 +15,8 @@ BASIC, play seven cartridges (a cave adventure whose rooms are folders, and
 guess, snake, hangman, typing, tetris and sokoban in BASIC that the kid can
 read, copy and change, plus a roguelike in C), share games as `.kdc` files,
 and, with the C or Go pack installed by a parent, write C with `cc` or Go
-with `goc` and run it in a sandbox. See [kiddos-plan.md](kiddos-plan.md) for the full plan,
+with `goc` and run it in a sandbox. `vi` is on the machine but locked:
+Prison Escape teaches `:q!`, and finishing vi-quest earns the editor. See [kiddos-plan.md](kiddos-plan.md) for the full plan,
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it is built,
 [docs/cartridges/](docs/cartridges/README.md) for the cartridge format and a
 walkthrough of every shipped game, [docs/PACKS.md](docs/PACKS.md) for the C
@@ -77,6 +78,7 @@ crates/kiddos-tutor     lesson state machine (TOML lessons, ~/.progress, badges)
 crates/kiddos-cart      cartridge manifest, launching, .kdc pack/unpack, install/share
 crates/kiddos-basic     EndBASIC 0.12 bound to the console and drive; SPEAK, BEEP, KEY$, TICK, PUT
 crates/kiddos-wasm      wasmtime sandbox: the `kiddos` import module, `wasm`, `cc`, `goc`
+crates/kiddos-vi        the vi engine, `vi` (locked until earned), vi-quest, prison-escape
 tools/mkpack.sh         wasi-sdk or LLVM → c-<os>-<arch>.kdp
 tools/mkpack-go.sh      TinyGo + GOROOT + wasm-opt → go-<os>-<arch>.kdp
 crates/kiddos-i18n      Fluent-syntax string bundles (English today; i18n-ready)

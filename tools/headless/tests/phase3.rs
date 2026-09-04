@@ -236,7 +236,10 @@ fn rogue_the_c_cartridge_plays() {
         m.key(Key::Right);
     }
     m.key(Key::Char('p'));
-    assert!(m.screen().contains("You have no potion."), "{}", m.screen());
+    // the dungeon is random: a monster may have interrupted with its own message
+    let s = m.screen();
+    assert!(s.contains("You have no potion.") || s.contains("bites you!"), "{s}");
+    assert!(s.starts_with("Depth 1"), "{s}");
     m.key(Key::Escape);
     let s = m.screen();
     assert!(s.contains("You left the dungeon with"), "{s}");

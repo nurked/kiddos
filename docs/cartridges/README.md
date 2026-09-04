@@ -32,8 +32,11 @@ caps = ["speak", "sound"]      # what the game may do: speak, sound
 world = ["~/cave"]             # folders where the kid "is inside the game"
 ```
 
-`entry` runs through the kernel exactly like a file the kid would run, so
-it needs an executable bit and a shebang: `#!/bin/basic` for BASIC,
+`entry` is usually a file in the folder. It may also be the name of a
+command built into the machine (vi-quest and prison-escape do this);
+then the folder holds only docs and data. A file entry runs through the
+kernel exactly like a file the kid would run, so it needs an executable
+bit and a shebang: `#!/bin/basic` for BASIC,
 `#!/bin/ksh` for a shell script. A `.wasm` entry needs no shebang: the
 kernel recognises the file and runs it in the sandbox. `install` sets the bit on any file that
 starts with `#!`.
@@ -108,3 +111,5 @@ two sibling `FOR` loops nested inside another `FOR` crash the compiler
 | [tetris](tetris.md) | 2-D arrays, GOSUB subroutines, pictures as data | BASIC |
 | [sokoban](sokoban.md) | levels as pictures, rules as code, strings as maps | BASIC |
 | [rogue](rogue.md) | a real program in C: arrays, structure, a game loop with no libc | C → wasm |
+| [prison-escape](prison-escape.md) | how to get out of vi: `:q`, `:q!`, `:wq` | Rust, on the vi engine |
+| [vi-quest](vi-quest.md) | vi's motions and edits, one land at a time; unlocks `vi` | Rust + TOML levels |

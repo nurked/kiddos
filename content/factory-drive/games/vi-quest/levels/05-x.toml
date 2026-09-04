@@ -1,0 +1,14 @@
+title = "The boulder field"
+story = """
+Boulders (o) block the path. x deletes the letter under you,
+and a boulder is just a letter. Stone (#) is not. Reach the X."""
+keys = ["h", "j", "k", "l", "x"]
+goal = "reach"
+hint = "x deletes the letter under the cursor. Walk onto a boulder and press x. It is gone, and the path shifts."
+done = "x. The smallest spell of destruction."
+map = """
+###################
+#@ o    o    o    #
+#  o    o    o    #
+#  o    o    o   X#
+###################"""

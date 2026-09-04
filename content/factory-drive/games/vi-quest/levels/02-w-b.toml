@@ -1,0 +1,11 @@
+title = "The river of words"
+story = """
+Walking letter by letter is slow. w jumps to the start of the next word,
+b jumps back one word. Only those two work here.
+Land on the X."""
+keys = ["w", "b"]
+goal = "reach"
+hint = "Count the words. Every w is one word. Overshot? b."
+done = "w and b. You jump by words now. Grown-ups do this all day."
+map = """
+@he quick brown fox jumps over the lazy dog X and sleeps"""

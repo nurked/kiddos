@@ -63,3 +63,4 @@ no-such-user = I don't know a user called { $user }.
 history-empty = No history yet. Type something!
 cd-home-hint = (no folder given, so I took you home)
 not-executable = { $path } is not runnable yet. Make it runnable with: chmod +x { $path }
+locked-command = { $cmd } is locked. You earn it by finishing a game: play vi-quest

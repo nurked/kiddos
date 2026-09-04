@@ -1,0 +1,12 @@
+title = "The way home"
+story = """
+Every land taught a spell. The last one is how to leave with your
+work saved: type :wq and press Enter. (:q! leaves without saving.)
+Write it and go home."""
+keys = ["any"]
+goal = "quit"
+hint = "Type a colon, then w, then q, then Enter."
+done = ":wq. You can always get out. Now the editor is yours."
+map = """
+@ The end of the quest.
+  Type :wq and press Enter."""

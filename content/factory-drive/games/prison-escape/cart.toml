@@ -1,0 +1,7 @@
+name = "prison-escape"
+title = "Prison Escape"
+version = "0.1.0"
+author = "KidDOS"
+entry = "prison-escape"
+description = "you are locked inside vi; find the way out"
+caps = ["speak", "sound"]

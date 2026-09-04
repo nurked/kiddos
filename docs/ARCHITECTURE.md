@@ -217,13 +217,33 @@ docs/PACKS.md, including why there is no Pascal yet.
 The proof program from the plan is `rogue`, a roguelike in C shipped as
 source plus a 9 KB `.wasm`; see docs/cartridges/rogue.md.
 
+## vi, locked commands, and the two vi games
+
+`kiddos-vi` holds a modal editing engine (`engine.rs`: normal, insert,
+command and search modes; hjkl, w/b/e, 0/$/^, gg/G, counts, x/X/D, dd,
+dw, yy/yw, p/P, r, J, ~, u with an undo stack, `/` with n/N, `:w :q :q!
+:wq :N`, ZZ). It knows nothing about screens or files: keys in, events
+out. `vi` wraps it with a file and the E37/E32/E492 messages; vi-quest
+wraps it with rules (allowed keys, stone, goals); Prison Escape wraps it
+with doors.
+
+The kernel gained *locked commands*: `register_locked` keeps a command
+out of the registry until `unlock(name)`, which also appends the name to
+`~/.unlocks`; at boot a locked command whose name is in that file is
+registered straight away. The shell answers a locked name with "vi is
+locked. You earn it by finishing a game", not "I don't know vi". This is
+the plan's "unlock tools by learning them", and `vi` is its first use.
+
+Cartridges may name a built-in command as their `entry`; the folder then
+carries only docs and levels. Levels are TOML on the drive.
+
 ## Decisions taken on the plan's open questions
 
 1. Name: still "KidDOS" (crate prefix `kiddos`).
 2. Grid: 80x25.
 3. `rm` in the kid's home is real and forever; trash semantics deferred.
 4. BASIC: EndBASIC 0.12, pinned for its Apache license (see above).
-5. `vi` ships locked (not registered at all yet).
+5. `vi` ships locked, and is unlocked by finishing vi-quest.
 6. Monetization: not addressed.
 7. Languages: English only. The string layer and content directories are
    per-language so more can be added later; none is planned until asked.

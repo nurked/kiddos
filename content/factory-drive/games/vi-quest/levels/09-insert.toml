@@ -1,0 +1,13 @@
+title = "The unfinished sentence"
+story = """
+So far you moved and deleted. Now you write. i inserts BEFORE the
+cursor, a inserts AFTER it. Letters you type go into the text.
+Esc leaves insert mode. The word 'mat' is missing at the end."""
+keys = ["h", "j", "k", "l", "$", "i", "a", "Esc", "x"]
+goal = "text"
+hint = "Go to the end ($), press a, type mat, press Esc."
+done = "i, a and Esc. In and out. That is the rhythm of vi."
+map = """
+@he cat sat on the """
+target = """
+ he cat sat on the mat"""

@@ -1,0 +1,19 @@
+title = "The land of hjkl"
+story = """
+The arrows are broken in this land. Four letters move you instead:
+h left, j down, k up, l right. (Your right hand rests on them.)
+Reach the X."""
+keys = ["h", "j", "k", "l"]
+goal = "reach"
+hint = "j goes DOWN (it hangs below the line), k goes UP."
+done = "hjkl. Your hands never leave the letters. That is the whole idea."
+map = """
+############################
+#@      #        #         #
+#       #   ###  #  ####   #
+#  ###  #   # #  #     #   #
+#    #  #   # #  ####  #   #
+#    #      #          #   #
+#  ###   ####  ####### #   #
+#        #             # X #
+############################"""

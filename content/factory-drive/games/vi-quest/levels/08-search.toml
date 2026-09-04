@@ -1,0 +1,16 @@
+title = "The library"
+story = """
+Walking through all this would take all day. / starts a search:
+type what you look for, press Enter, and you jump there.
+n jumps to the next match. Find the X."""
+keys = ["/", "n", "j", "k", "h", "l"]
+goal = "reach"
+hint = "Type  /X  and press Enter."
+done = "/ finds anything in any file. Remember n for the next one."
+map = """
+@f all the shelves in all the rooms of this dusty library not one
+holds what you seek for the librarian hid it in plain sight among
+words about words and words about nothing much at all and yet you
+need only ask the right way the answer is here somewhere honest X
+and now you know how to ask and asking is faster than walking any
+day of the week."""

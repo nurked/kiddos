@@ -1578,6 +1578,7 @@ dependencies = [
  "kiddos-shell",
  "kiddos-tutor",
  "kiddos-vfs",
+ "kiddos-vi",
  "kiddos-wasm",
  "log",
  "wgpu",
@@ -1643,6 +1644,7 @@ dependencies = [
  "kiddos-shell",
  "kiddos-tutor",
  "kiddos-vfs",
+ "kiddos-vi",
  "kiddos-wasm",
  "wat",
  "zip",
@@ -1737,6 +1739,17 @@ version = "0.4.0"
 dependencies = [
  "rusqlite",
  "thiserror 2.0.20",
+]
+
+[[package]]
+name = "kiddos-vi"
+version = "0.4.0"
+dependencies = [
+ "kiddos-console",
+ "kiddos-kernel",
+ "kiddos-vfs",
+ "serde",
+ "toml",
 ]
 
 [[package]]

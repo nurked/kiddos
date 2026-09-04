@@ -1,0 +1,20 @@
+title = "The weedy field"
+story = """
+dd deletes a whole line. Three lines of weeds (~~~) choke this field.
+Stand on a weed line and dd it. Use j and k to get there.
+The field is clean when only the flower lines remain."""
+keys = ["j", "k", "dd"]
+goal = "text"
+hint = "Move onto a line of ~ and press d twice."
+done = "dd. A whole line, gone. (u would bring it back.)"
+map = """
+@ * * * * flowers * * * * *
+~~~~~~~~~~~~~ weeds ~~~~~~~
+* * * * * flowers * * * * *
+~~~~~~~~~~~~~ weeds ~~~~~~~
+~~~~~~~~~~~~~ weeds ~~~~~~~
+* * * * * flowers * * * * *"""
+target = """
+  * * * * flowers * * * * *
+* * * * * flowers * * * * *
+* * * * * flowers * * * * *"""

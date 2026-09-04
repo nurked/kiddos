@@ -31,6 +31,7 @@ impl Machine {
         kiddos_basic::register(&kernel);
         kiddos_cart::register(&kernel);
         kiddos_wasm::register(&kernel);
+        kiddos_vi::register(&kernel);
         kiddos_tutor::Tutor::install(&kernel);
         let init = kernel.boot();
         let m = Machine {

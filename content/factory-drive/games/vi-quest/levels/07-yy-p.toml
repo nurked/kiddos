@@ -1,0 +1,14 @@
+title = "The broken bridge"
+story = """
+yy copies (yanks) the line you stand on. p pastes it below you.
+One plank is left. Make three planks in a row: yy, then p, then p."""
+keys = ["j", "k", "yy", "p"]
+goal = "text"
+hint = "Stand on the plank line: yy. Then p twice."
+done = "yy and p. Copy and paste, without a mouse."
+map = """
+@--------------- plank ----------------"""
+target = """
+ --------------- plank ----------------
+ --------------- plank ----------------
+ --------------- plank ----------------"""

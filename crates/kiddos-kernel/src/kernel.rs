@@ -176,7 +176,12 @@ pub struct Kernel {
     /// The shell sets this while a command runs so `ps` and Ctrl-C know.
     pub kid_name: Mutex<String>,
     extensions: Mutex<HashMap<TypeId, Arc<dyn Any + Send + Sync>>>,
+    /// Commands a kid earns by playing (the plan's progression mechanic).
+    locked: Mutex<BTreeMap<String, Command>>,
 }
+
+/// Where earned commands are remembered: one name per line, cat-able.
+pub const UNLOCKS_FILE: &str = "/home/kid/.unlocks";
 
 const SPEAK_MIN_GAP_MS: u64 = 400;
 const SPEAK_MAX_CHARS: usize = 400;
@@ -202,6 +207,7 @@ impl Kernel {
             shutting_down: AtomicBool::new(false),
             kid_name: Mutex::new(kid_name),
             extensions: Mutex::new(HashMap::new()),
+            locked: Mutex::new(BTreeMap::new()),
         });
         {
             let host = k.host.clone();
@@ -236,6 +242,50 @@ impl Kernel {
 
     pub fn command_names(&self) -> Vec<String> {
         self.registry.read().keys().cloned().collect()
+    }
+
+    /// Register a command the kid cannot use until something unlocks it.
+    pub fn register_locked(&self, cmd: Command) {
+        if self.is_unlocked_on_disk(cmd.name) {
+            self.register(cmd);
+        } else {
+            self.locked.lock().insert(cmd.name.to_string(), cmd);
+        }
+    }
+
+    fn is_unlocked_on_disk(&self, name: &str) -> bool {
+        self.vfs
+            .lock()
+            .read_string(UNLOCKS_FILE, &Actor::root())
+            .map(|s| s.lines().any(|l| l.trim() == name))
+            .unwrap_or(false)
+    }
+
+    pub fn is_locked(&self, name: &str) -> bool {
+        self.locked.lock().contains_key(name)
+    }
+
+    pub fn locked_names(&self) -> Vec<String> {
+        self.locked.lock().keys().cloned().collect()
+    }
+
+    /// Grant a locked command for good. Returns false if there was no such
+    /// locked command (already unlocked, or never registered).
+    pub fn unlock(&self, name: &str) -> bool {
+        let Some(cmd) = self.locked.lock().remove(name) else {
+            return false;
+        };
+        self.register(cmd);
+        self.sync_bin();
+        {
+            let mut vfs = self.vfs.lock();
+            let existing = vfs.read_string(UNLOCKS_FILE, &Actor::root()).unwrap_or_default();
+            if !existing.lines().any(|l| l.trim() == name) {
+                let _ = vfs.append(UNLOCKS_FILE, format!("{name}\n").as_bytes(), &Actor::user(KID_USER));
+            }
+        }
+        self.log(&format!("unlocked {name}"));
+        true
     }
 
     /// Make `/bin` mirror the registry so `ls /bin` teaches where commands
