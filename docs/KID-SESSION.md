@@ -38,6 +38,8 @@ finished, games played, parent-mode entries: read it after the session.
   lesson says? Does `edit` feel like the editor they expect?
 - **Games.** Which one first, how long, do they look at the source
   (`cat /games/snake/snake.bas`) when told it is a text file?
+- **vi.** Prison Escape: do the guard's hints land, or does the kid give
+  up before the chalk? vi-quest: which land stops them?
 - **Sound and voice.** Does `speak` delight or embarrass? Is the typing
   chime rewarding?
 - **Leaving.** Do they ever try to quit? What do they press?

@@ -735,6 +735,68 @@ impl Vfs {
         Ok(())
     }
 
+    /// Replace the subtree at `path` with the one from `other` (owned by
+    /// root). Missing in `other`: removed here. Used to refresh the
+    /// machine's own folders from a newer factory image without touching
+    /// anything the kid or a parent made.
+    pub fn replace_subtree_from(&mut self, other: &Vfs, path: &str) -> Result<()> {
+        let root = Actor::root();
+        let src = match other.walk(path, false) {
+            Ok(i) => i,
+            Err(VfsError::NotFound(_)) => {
+                if self.exists(path) {
+                    let _ = self.remove_tree(path, &root);
+                }
+                return Ok(());
+            }
+            Err(e) => return Err(e),
+        };
+        if self.walk(path, false).is_ok() {
+            self.remove_tree(path, &root)?;
+        }
+        let parent = dirname(path);
+        self.mkdir_p(&parent, &root)?;
+        self.copy_node_from(other, src, path)
+    }
+
+    fn copy_node_from(&mut self, other: &Vfs, src: Ino, dest: &str) -> Result<()> {
+        let root = Actor::root();
+        let n = other.node(src);
+        match n.kind {
+            Kind::Dir => {
+                self.mkdir(dest, &root)?;
+                self.chmod(dest, n.mode, &root)?;
+                for (name, &child) in &n.children {
+                    self.copy_node_from(other, child, &format!("{}/{}", dest.trim_end_matches('/'), name))?;
+                }
+            }
+            Kind::File => {
+                self.write(dest, &n.data, &root)?;
+                self.chmod(dest, n.mode, &root)?;
+            }
+            Kind::Symlink => {
+                self.symlink(&String::from_utf8_lossy(&n.data), dest, &root)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Bring the machine's own content up to date from a newer factory
+    /// image: `/etc`, `/usr`, `/lessons`, and every game the factory ships
+    /// under `/games`. Games installed by a parent and everything under
+    /// `/home` are left alone.
+    pub fn refresh_from_factory(&mut self, factory: &Vfs) -> Result<()> {
+        for p in ["/etc", "/usr", "/lessons", "/dev"] {
+            self.replace_subtree_from(factory, p)?;
+        }
+        let root = Actor::root();
+        self.mkdir_p("/games", &root)?;
+        for e in factory.readdir("/games", &root)? {
+            self.replace_subtree_from(factory, &format!("/games/{}", e.name))?;
+        }
+        Ok(())
+    }
+
     /// Recursively set owner (used when building the factory image).
     pub fn chown_tree(&mut self, path: &str, owner: &str) -> Result<()> {
         let ino = self.walk(path, true)?;
@@ -851,6 +913,46 @@ mod tests {
             Err(VfsError::Invalid("/home/kid/b/c".into()))
         );
         assert!(v.rename("/home/kid/b/f", "/games/f", &kid()).is_err());
+    }
+
+    #[test]
+    fn refresh_keeps_the_kid_and_updates_the_machine() {
+        let mut old = drive();
+        old.write("/games/readme", b"old text", &Actor::root()).unwrap();
+        old.mkdir_p("/games/snake", &Actor::root()).unwrap();
+        old.write("/games/snake/snake.bas", b"v1", &Actor::root()).unwrap();
+        old.mkdir_p("/games/frombob", &Actor::root()).unwrap();
+        old.write("/games/frombob/cart.toml", b"name = \"frombob\"", &Actor::root())
+            .unwrap();
+        old.write("/home/kid/mine.txt", b"keep", &kid()).unwrap();
+        old.mkdir_p("/usr/share/man/en", &Actor::root()).unwrap();
+        old.write("/usr/share/man/en/gone.md", b"stale", &Actor::root())
+            .unwrap();
+        let mut new = Vfs::new();
+        let r = Actor::root();
+        new.mkdir_p("/games/snake", &r).unwrap();
+        new.write("/games/snake/snake.bas", b"v2", &r).unwrap();
+        new.chmod("/games/snake/snake.bas", 0o755, &r).unwrap();
+        new.mkdir_p("/games/vi-quest/levels", &r).unwrap();
+        new.write("/games/vi-quest/levels/01.toml", b"x", &r).unwrap();
+        new.mkdir_p("/usr/share/man/en", &r).unwrap();
+        new.write("/usr/share/man/en/vi.md", b"# vi", &r).unwrap();
+        new.mkdir_p("/etc", &r).unwrap();
+        new.write("/etc/motd", b"hello", &r).unwrap();
+        new.mkdir_p("/home/kid", &r).unwrap();
+        new.write("/home/kid/welcome.txt", b"factory welcome", &r).unwrap();
+        old.refresh_from_factory(&new).unwrap();
+        assert_eq!(old.read("/games/snake/snake.bas", &kid()).unwrap(), b"v2");
+        assert_eq!(old.stat("/games/snake/snake.bas").unwrap().mode, 0o755);
+        assert!(old.exists("/games/vi-quest/levels/01.toml"));
+        assert!(old.exists("/games/frombob/cart.toml"), "parent-installed game kept");
+        assert!(old.exists("/games/readme"), "not a factory game folder: kept");
+        assert!(!old.exists("/usr/share/man/en/gone.md"));
+        assert!(old.exists("/usr/share/man/en/vi.md"));
+        assert_eq!(old.read("/etc/motd", &kid()).unwrap(), b"hello");
+        assert_eq!(old.read("/home/kid/mine.txt", &kid()).unwrap(), b"keep");
+        assert!(!old.exists("/home/kid/welcome.txt"), "home is the kid's");
+        assert_eq!(old.stat("/games/vi-quest").unwrap().owner, "root");
     }
 
     #[test]

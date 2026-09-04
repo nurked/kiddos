@@ -34,7 +34,22 @@ fn load_drive(paths: &Paths) -> Vfs {
         }
     }
     match Vfs::load(&paths.drive) {
-        Ok(v) => v,
+        Ok(mut v) => {
+            // new content (games, lessons, man pages) reaches old drives
+            let tmp = paths.dir.join("factory.kdd");
+            if std::fs::write(&tmp, FACTORY).is_ok() {
+                match Vfs::load(&tmp) {
+                    Ok(factory) => {
+                        if let Err(e) = v.refresh_from_factory(&factory) {
+                            log::warn!("could not refresh drive content: {e}");
+                        }
+                    }
+                    Err(e) => log::warn!("factory image unreadable: {e}"),
+                }
+                let _ = std::fs::remove_file(&tmp);
+            }
+            v
+        }
         Err(e) => {
             log::error!("drive unreadable ({e}); starting from factory");
             let ts = std::time::SystemTime::now()

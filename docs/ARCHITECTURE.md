@@ -1,4 +1,4 @@
-# Architecture notes (Phases 0–3)
+# Architecture notes (Phases 0–4)
 
 This records how the plan in `kiddos-plan.md` was realized and where it was
 bent. Read the plan first.
@@ -49,6 +49,12 @@ Persistence is a single SQLite file written whole via temp-file + rename
 (atomic on every OS), debounced 500 ms in the app. The factory image is
 built by `app/build.rs` from `content/factory-drive` and embedded in the
 binary; `reset-drive` deletes the drive file and reboots.
+
+At every boot the app refreshes the machine's own folders (`/etc`, `/usr`,
+`/lessons`, `/dev`, and each game the factory ships under `/games`) from
+the embedded image, so a drive made by an older build gets new games,
+lessons and man pages. `/home` and games a parent installed are never
+touched.
 
 `/bin` is real: the kernel mirrors the command registry into it at boot so
 `ls /bin` works. `/dev/null`, `/dev/tty`, `/dev/speaker` are intercepted in

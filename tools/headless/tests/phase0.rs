@@ -8,7 +8,7 @@ use kiddos_kernel::Key;
 fn boot_banner_and_motd() {
     let m = Machine::boot();
     let s = m.screen();
-    assert!(s.contains("KidDOS 0.4.0"), "{s}");
+    assert!(s.contains("KidDOS 0.5.0"), "{s}");
     assert!(s.contains("Welcome to your computer."), "{s}");
     assert!(s.contains("Type hi and press Enter."), "{s}");
     assert!(s.ends_with("kid@kiddos:~$"), "{s}");
