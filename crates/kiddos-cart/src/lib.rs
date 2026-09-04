@@ -250,6 +250,7 @@ pub mod kdc {
 use kiddos_kernel::{CmdResult, Command, Kernel, Topic};
 
 pub fn register(k: &Kernel) {
+    register_packs(k);
     k.register(Command::new(
         "newgame",
         cmd_newgame,
@@ -555,5 +556,101 @@ mod kdc_tests {
         assert!(entries[2].exec && !entries[0].exec);
         assert!(kdc::pack(&v, "/games").is_err());
         assert!(kdc::unpack(b"not a zip").is_err());
+    }
+}
+
+// ---- toolchain packs (parent) ------------------------------------------
+
+pub fn register_packs(k: &Kernel) {
+    for c in [
+        Command::new(
+            "packs",
+            cmd_packs,
+            "toolchain packs (compilers) on this machine",
+            Topic::Parent,
+        )
+        .parent(),
+        Command::new(
+            "install-pack",
+            cmd_install_pack,
+            "install a .kdp toolchain pack: install-pack c",
+            Topic::Parent,
+        )
+        .parent(),
+        Command::new("remove-pack", cmd_remove_pack, "remove a toolchain pack", Topic::Parent).parent(),
+    ] {
+        k.register(c);
+    }
+}
+
+fn cmd_packs(p: &Proc, _args: &[String]) -> CmdResult {
+    let host = p.kernel().host();
+    let packs = host.list_packs();
+    p.println("Installed packs:");
+    if packs.is_empty() {
+        p.println("  (none)");
+    }
+    for (name, desc) in packs {
+        p.println(&format!("  {name:<10} {desc}"));
+    }
+    let kdp: Vec<String> = host
+        .list_cart_files()
+        .into_iter()
+        .filter(|f| f.ends_with(".kdp"))
+        .collect();
+    if !kdp.is_empty() {
+        p.println(&format!("Pack files waiting in {}:", host.cart_folder_hint()));
+        for f in kdp {
+            p.println(&format!("  {f}"));
+        }
+    }
+    match host.c_compiler_available() {
+        Ok(()) => p.println("cc works: the C pack is ready."),
+        Err(e) => p.println(&format!("cc does not work yet: {e}")),
+    }
+    Ok(0)
+}
+
+fn cmd_install_pack(p: &Proc, args: &[String]) -> CmdResult {
+    let Some(arg) = args.first() else {
+        p.println(&p.t(
+            "usage",
+            &[("usage", "install-pack <name or file.kdp>   (see them with packs)")],
+        ));
+        return Ok(1);
+    };
+    let file = if arg.ends_with(".kdp") {
+        arg.clone()
+    } else {
+        format!("{arg}.kdp")
+    };
+    match p.kernel().host().install_pack(&file) {
+        Ok(summary) => {
+            p.kernel().log(&format!("install-pack {file}"));
+            p.println(&format!("Installed {summary}"));
+            Ok(0)
+        }
+        Err(e) => {
+            p.println(&format!("install-pack: {e}"));
+            Ok(1)
+        }
+    }
+}
+
+fn cmd_remove_pack(p: &Proc, args: &[String]) -> CmdResult {
+    let Some(name) = args.first() else {
+        p.println(&p.t("usage", &[("usage", "remove-pack <name>")]));
+        return Ok(1);
+    };
+    match p.kernel().host().remove_pack(name) {
+        Ok(()) => {
+            p.kernel().log(&format!("remove-pack {name}"));
+            p.println(&format!("Removed pack {name}."));
+            Ok(0)
+        }
+        Err(e) => {
+            p.println(&format!("remove-pack: {e}"));
+            Ok(1)
+        }
     }
 }

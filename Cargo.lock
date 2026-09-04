@@ -1645,6 +1645,7 @@ dependencies = [
  "kiddos-vfs",
  "kiddos-wasm",
  "wat",
+ "zip",
 ]
 
 [[package]]
@@ -1664,6 +1665,7 @@ dependencies = [
  "serde",
  "toml",
  "winit",
+ "zip",
 ]
 
 [[package]]

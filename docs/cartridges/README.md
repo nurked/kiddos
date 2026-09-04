@@ -34,7 +34,8 @@ world = ["~/cave"]             # folders where the kid "is inside the game"
 
 `entry` runs through the kernel exactly like a file the kid would run, so
 it needs an executable bit and a shebang: `#!/bin/basic` for BASIC,
-`#!/bin/ksh` for a shell script. `install` sets the bit on any file that
+`#!/bin/ksh` for a shell script. A `.wasm` entry needs no shebang: the
+kernel recognises the file and runs it in the sandbox. `install` sets the bit on any file that
 starts with `#!`.
 
 `caps` is the capability list from the plan: a cartridge without `speak`
@@ -106,3 +107,4 @@ two sibling `FOR` loops nested inside another `FOR` crash the compiler
 | [typing](typing.md) | KEY$, TICK, measuring time | BASIC |
 | [tetris](tetris.md) | 2-D arrays, GOSUB subroutines, pictures as data | BASIC |
 | [sokoban](sokoban.md) | levels as pictures, rules as code, strings as maps | BASIC |
+| [rogue](rogue.md) | a real program in C: arrays, structure, a game loop with no libc | C → wasm |

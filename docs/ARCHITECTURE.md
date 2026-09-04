@@ -200,8 +200,22 @@ the host runs a real clang (`packs/c/bin/clang` beside the drive, or
 no-argument `main` `__main_void`; the runtime accepts both). Diagnostics
 are rewritten as "hello.c, line 3: expected ';'... Every statement ends
 with a semicolon."; `cc -v` shows clang's own words. Without the pack,
-`cc` says so and points at docs/PACKS.md. Bundling the toolchain, and
-the Go and Pascal packs, are still open.
+`cc` says so and points at docs/PACKS.md.
+
+Packs are `.kdp` zips installed by parent mode (`install-pack`) into
+`packs/<name>/` through three more `HostCaps` methods; `tools/mkpack.sh`
+slices a 36 MB C pack out of a wasi-sdk release (clang, wasm-ld and the
+two LLVM dylibs they reference, found by following `otool -L`).
+
+`goc` works the same way with TinyGo (`packs/go/bin/tinygo`, plus a
+bundled GOROOT and `wasm-opt`): the kid's `.go` files, the `kiddos`
+package from `/usr/share/go/kiddos` and a generated entry file exporting
+`kiddos_main` go out; TinyGo's bare `wasm-unknown` target never calls
+Go's `main`, so the runtime calls `_initialize` then `kiddos_main`. See
+docs/PACKS.md, including why there is no Pascal yet.
+
+The proof program from the plan is `rogue`, a roguelike in C shipped as
+source plus a 9 KB `.wasm`; see docs/cartridges/rogue.md.
 
 ## Decisions taken on the plan's open questions
 

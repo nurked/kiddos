@@ -9,6 +9,7 @@
 //! sentence on the screen.
 
 pub mod cc;
+pub mod goc;
 mod host;
 
 use host::{Exit, State};
@@ -28,6 +29,12 @@ pub fn register(k: &Kernel) {
         "cc",
         cc::cmd_cc,
         "compile a C program: cc hello.c",
+        Topic::Programs,
+    ));
+    k.register(Command::new(
+        "goc",
+        goc::cmd_goc,
+        "compile a Go program: goc hello.go",
         Topic::Programs,
     ));
 }
@@ -114,11 +121,20 @@ fn run_inner(p: &Proc, bytes: &[u8]) -> anyhow::Result<i32> {
     };
     let result = (|| -> anyhow::Result<i32> {
         let instance = linker.instantiate(&mut store, &module)?;
+        // reactor-style modules (TinyGo) set up their runtime in _initialize
+        if let Ok(init) = instance.get_typed_func::<(), ()>(&mut store, "_initialize") {
+            init.call(&mut store, ())?;
+        }
         // clang's wasm target calls a no-argument main `__main_void`
         for name in ["main", "__main_void"] {
             if let Ok(main) = instance.get_typed_func::<(), i32>(&mut store, name) {
                 return main.call(&mut store, ());
             }
+        }
+        // goc adds an exported `kiddos_main` (no result) that calls Go's main
+        if let Ok(main) = instance.get_typed_func::<(), ()>(&mut store, "kiddos_main") {
+            main.call(&mut store, ())?;
+            return Ok(0);
         }
         if let Ok(start) = instance.get_typed_func::<(), ()>(&mut store, "_start") {
             start.call(&mut store, ())?;
@@ -151,4 +167,18 @@ fn cmd_wasm(p: &Proc, args: &[String]) -> CmdResult {
             Ok(1)
         }
     }
+}
+
+/// Imports and exports of a module, one per line (for diagnostics).
+pub fn describe(bytes: &[u8]) -> anyhow::Result<String> {
+    let engine = engine()?;
+    let module = wasmtime::Module::new(&engine, bytes)?;
+    let mut out = String::new();
+    for i in module.imports() {
+        out.push_str(&format!("import {}.{}\n", i.module(), i.name()));
+    }
+    for e in module.exports() {
+        out.push_str(&format!("export {}\n", e.name()));
+    }
+    Ok(out)
 }

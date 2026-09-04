@@ -19,3 +19,4 @@ log.workspace = true
 parking_lot.workspace = true
 cpal = "0.15"
 libc = "0.2"
+zip = { version = "2", default-features = false, features = ["deflate"] }

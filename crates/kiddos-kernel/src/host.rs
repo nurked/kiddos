@@ -79,6 +79,18 @@ pub trait HostCaps: Send + Sync {
     fn cart_folder_hint(&self) -> String {
         "the cartridge folder".into()
     }
+    /// Installed toolchain packs: (name, description from pack.toml).
+    fn list_packs(&self) -> Vec<(String, String)> {
+        Vec::new()
+    }
+    /// Unpack a `.kdp` from the cartridge folder into the packs folder.
+    /// Returns a one-line summary.
+    fn install_pack(&self, _file: &str) -> Result<String, String> {
+        Err("this machine cannot install packs".into())
+    }
+    fn remove_pack(&self, _name: &str) -> Result<(), String> {
+        Err("this machine cannot remove packs".into())
+    }
     /// Is a wasm32 C compiler available? `Err` carries the explanation.
     fn c_compiler_available(&self) -> Result<(), String> {
         Err("this machine has no C compiler. A parent can add the C pack (see docs).".into())
@@ -87,6 +99,15 @@ pub trait HostCaps: Send + Sync {
     /// into one wasm module. `Err` carries the compiler's own output.
     fn compile_c(&self, _files: &[(String, Vec<u8>)]) -> Result<Vec<u8>, String> {
         Err("no C compiler".into())
+    }
+    /// Is TinyGo available? `Err` carries the explanation.
+    fn go_compiler_available(&self) -> Result<(), String> {
+        Err("this machine has no Go compiler. A parent can add the Go pack (see docs).".into())
+    }
+    /// Compile Go sources (name, bytes) plus the `kiddos` package files
+    /// (path under `kiddos/`, bytes) into one wasm module.
+    fn compile_go(&self, _files: &[(String, Vec<u8>)], _pkg: &[(String, Vec<u8>)]) -> Result<Vec<u8>, String> {
+        Err("no Go compiler".into())
     }
 }
 

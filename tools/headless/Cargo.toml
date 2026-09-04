@@ -27,3 +27,4 @@ kiddos-console.workspace = true
 [dev-dependencies]
 wat = "1"
 kiddos-host.workspace = true
+zip = { version = "2", default-features = false, features = ["deflate"] }

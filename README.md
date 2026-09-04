@@ -13,8 +13,9 @@ sandbox). A kid can boot, explore, make files, read the manual, follow twelve
 lessons with a tutor that watches the shell, write with `edit`, program in
 BASIC, play seven cartridges (a cave adventure whose rooms are folders, and
 guess, snake, hangman, typing, tetris and sokoban in BASIC that the kid can
-read, copy and change), share games as `.kdc` files, and, with the C pack
-installed by a parent, write C with `cc` and run it in a sandbox. See [kiddos-plan.md](kiddos-plan.md) for the full plan,
+read, copy and change, plus a roguelike in C), share games as `.kdc` files,
+and, with the C or Go pack installed by a parent, write C with `cc` or Go
+with `goc` and run it in a sandbox. See [kiddos-plan.md](kiddos-plan.md) for the full plan,
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it is built,
 [docs/cartridges/](docs/cartridges/README.md) for the cartridge format and a
 walkthrough of every shipped game, [docs/PACKS.md](docs/PACKS.md) for the C
@@ -75,7 +76,9 @@ crates/kiddos-man       Markdown man renderer, lookup, search, pager
 crates/kiddos-tutor     lesson state machine (TOML lessons, ~/.progress, badges)
 crates/kiddos-cart      cartridge manifest, launching, .kdc pack/unpack, install/share
 crates/kiddos-basic     EndBASIC 0.12 bound to the console and drive; SPEAK, BEEP, KEY$, TICK, PUT
-crates/kiddos-wasm      wasmtime sandbox: the `kiddos` import module, `wasm`, `cc`
+crates/kiddos-wasm      wasmtime sandbox: the `kiddos` import module, `wasm`, `cc`, `goc`
+tools/mkpack.sh         wasi-sdk or LLVM → c-<os>-<arch>.kdp
+tools/mkpack-go.sh      TinyGo + GOROOT + wasm-opt → go-<os>-<arch>.kdp
 crates/kiddos-i18n      Fluent-syntax string bundles (English today; i18n-ready)
 crates/kiddos-render    wgpu renderer with the CRT shader
 crates/kiddos-host      window, keys, speech, sound, config dir, parent password

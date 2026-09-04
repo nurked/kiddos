@@ -1,0 +1,7 @@
+name = "rogue"
+title = "Rogue"
+version = "0.1.0"
+author = "KidDOS"
+entry = "rogue.wasm"
+description = "a dungeon crawler written in C, compiled to wasm"
+caps = ["speak", "sound"]
