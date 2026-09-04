@@ -225,3 +225,88 @@ fn tetris_and_sokoban_play() {
     m.key(Key::Escape);
     assert!(m.screen().ends_with("kid@kiddos:~$"), "{}", m.screen());
 }
+
+#[test]
+fn a_kid_makes_a_game_and_a_parent_shares_it() {
+    let m = Machine::boot();
+    m.run_script(
+        "@clear
+newgame rocket
+@expect Made ~/rocket/
+newgame Rocket
+@expect lowercase
+cat ~/rocket/cart.toml
+@expect name = \"rocket\"
+ls -l ~/rocket
+@expect -rwxr-xr-x
+",
+    );
+    // the scaffolded game runs
+    m.run("clear");
+    m.run("run ~/rocket/rocket.bas");
+    assert!(m.screen().contains("Press a key. ESC ends the game."), "{}", m.screen());
+    m.key(Key::Char('z'));
+    assert!(m.screen().contains("You pressed z"), "{}", m.screen());
+    m.key(Key::Escape);
+    assert!(m.screen().ends_with("kid@kiddos:~$"), "{}", m.screen());
+    // a parent exports it, then installs it on "another" machine (same one here)
+    m.run_script(
+        "@clear
+share /home/kid/rocket
+@expect Only a parent can do that.
+parent
+pw
+pw
+carts
+@expect (none; copy a .kdc file there
+share /home/kid/rocket
+@expect Wrote carts/rocket.kdc
+carts
+@expect rocket.kdc
+install nothing
+@expect no nothing.kdc in the cartridge folder
+install rocket
+@expect Installed rocket: rocket (4 files, unsigned cartridge)
+exit
+",
+    );
+    assert!(m
+        .host
+        .cart_files
+        .lock()
+        .get("rocket.kdc")
+        .map(|b| b.starts_with(b"PK"))
+        .unwrap_or(false));
+    m.run("clear");
+    m.run("games");
+    assert!(m.screen().contains("rocket       rocket"), "{}", m.screen());
+    m.run("man rocket");
+    assert!(m.screen().contains("play rocket"), "{}", m.screen());
+    m.run("clear");
+    m.run("play rocket");
+    assert!(m.screen().contains("Press a key."), "{}", m.screen());
+    m.key(Key::Escape);
+    // a kid may not remove it; a parent may
+    m.run_script(
+        "@clear
+uninstall rocket
+@expect Only a parent can do that.
+parent
+pw
+uninstall rocket
+@expect Removed rocket.
+uninstall rocket
+@expect there is no game called rocket
+exit
+@clear
+games
+@absent rocket
+",
+    );
+    assert!(m
+        .host
+        .log_lines
+        .lock()
+        .iter()
+        .any(|l| l.contains("install rocket from rocket.kdc")));
+}

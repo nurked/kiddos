@@ -109,6 +109,35 @@ impl HostCaps for RealHost {
     fn tz_offset_secs(&self) -> i32 {
         local_tz_offset()
     }
+    fn list_cart_files(&self) -> Vec<String> {
+        let mut out: Vec<String> = std::fs::read_dir(&self.paths.carts)
+            .map(|rd| {
+                rd.filter_map(|e| e.ok())
+                    .map(|e| e.file_name().to_string_lossy().to_string())
+                    .filter(|n| n.ends_with(".kdc"))
+                    .collect()
+            })
+            .unwrap_or_default();
+        out.sort();
+        out
+    }
+    fn read_cart_file(&self, name: &str) -> Result<Vec<u8>, String> {
+        if name.contains('/') || name.contains('\\') || name.starts_with('.') {
+            return Err("cartridge names are plain file names".into());
+        }
+        std::fs::read(self.paths.carts.join(name)).map_err(|e| format!("{name}: {e}"))
+    }
+    fn write_cart_file(&self, name: &str, data: &[u8]) -> Result<String, String> {
+        if name.contains('/') || name.contains('\\') || name.starts_with('.') {
+            return Err("cartridge names are plain file names".into());
+        }
+        let path = self.paths.carts.join(name);
+        std::fs::write(&path, data).map_err(|e| format!("{}: {e}", path.display()))?;
+        Ok(path.display().to_string())
+    }
+    fn cart_folder_hint(&self) -> String {
+        self.paths.carts.display().to_string()
+    }
 }
 
 #[cfg(unix)]

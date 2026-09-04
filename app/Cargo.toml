@@ -18,6 +18,7 @@ kiddos-shell.workspace = true
 kiddos-builtins.workspace = true
 kiddos-tutor.workspace = true
 kiddos-basic.workspace = true
+kiddos-cart.workspace = true
 kiddos-render.workspace = true
 kiddos-host.workspace = true
 winit.workspace = true

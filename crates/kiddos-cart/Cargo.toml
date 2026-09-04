@@ -11,3 +11,4 @@ kiddos-vfs.workspace = true
 kiddos-console.workspace = true
 serde.workspace = true
 toml.workspace = true
+zip = { version = "2", default-features = false, features = ["deflate"] }

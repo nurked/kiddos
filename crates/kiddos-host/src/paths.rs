@@ -9,6 +9,8 @@ pub struct Paths {
     pub config: PathBuf,
     pub parent_hash: PathBuf,
     pub log: PathBuf,
+    /// `.kdc` cartridges go in and out through here.
+    pub carts: PathBuf,
 }
 
 impl Paths {
@@ -29,6 +31,7 @@ impl Paths {
             config: dir.join("config.toml"),
             parent_hash: dir.join("parent.hash"),
             log: dir.join("log.txt"),
+            carts: dir.join("carts"),
             dir,
         }
     }
@@ -38,7 +41,8 @@ impl Paths {
     }
 
     pub fn ensure(&self) -> std::io::Result<()> {
-        std::fs::create_dir_all(&self.dir)
+        std::fs::create_dir_all(&self.dir)?;
+        std::fs::create_dir_all(&self.carts)
     }
 }
 

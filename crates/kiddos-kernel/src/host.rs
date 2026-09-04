@@ -64,6 +64,21 @@ pub trait HostCaps: Send + Sync {
     fn tz_offset_secs(&self) -> i32 {
         0
     }
+    /// `.kdc` files a parent dropped into the host's cartridge folder.
+    fn list_cart_files(&self) -> Vec<String> {
+        Vec::new()
+    }
+    fn read_cart_file(&self, _name: &str) -> Result<Vec<u8>, String> {
+        Err("this machine has no cartridge folder".into())
+    }
+    /// Write a `.kdc` into the cartridge folder; returns where it went.
+    fn write_cart_file(&self, _name: &str, _data: &[u8]) -> Result<String, String> {
+        Err("this machine has no cartridge folder".into())
+    }
+    /// Where parents put cartridges, for messages.
+    fn cart_folder_hint(&self) -> String {
+        "the cartridge folder".into()
+    }
 }
 
 /// A host that does nothing real. Used by the headless tool and tests: time
@@ -79,6 +94,7 @@ pub struct NullHost {
     pub parent_password: Mutex<Option<String>>,
     pub config: Mutex<Option<MachineConfig>>,
     pub fixed_unix_time: Option<u64>,
+    pub cart_files: Mutex<std::collections::BTreeMap<String, Vec<u8>>>,
 }
 
 impl Default for NullHost {
@@ -99,6 +115,7 @@ impl NullHost {
             parent_password: Mutex::new(None),
             config: Mutex::new(None),
             fixed_unix_time: None,
+            cart_files: Mutex::new(std::collections::BTreeMap::new()),
         }
     }
 
@@ -153,5 +170,22 @@ impl HostCaps for NullHost {
         let l = self.log_lines.lock();
         let start = l.len().saturating_sub(max_lines);
         l[start..].to_vec()
+    }
+    fn list_cart_files(&self) -> Vec<String> {
+        self.cart_files.lock().keys().cloned().collect()
+    }
+    fn read_cart_file(&self, name: &str) -> Result<Vec<u8>, String> {
+        self.cart_files
+            .lock()
+            .get(name)
+            .cloned()
+            .ok_or_else(|| format!("no {name} in the cartridge folder"))
+    }
+    fn write_cart_file(&self, name: &str, data: &[u8]) -> Result<String, String> {
+        self.cart_files.lock().insert(name.to_string(), data.to_vec());
+        Ok(format!("carts/{name}"))
+    }
+    fn cart_folder_hint(&self) -> String {
+        "carts/".into()
     }
 }

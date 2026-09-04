@@ -124,6 +124,17 @@ shell: it copies its room tree into `~/cave` so the kid can move and delete
 things, and its levers are `ksh` scripts using `&&`/`||` and `2>` for the
 locked-door logic. Unlocks (`vi` after vi-quest) wait for Phase 4.
 
+### Sharing
+
+A `.kdc` is a plain zip of a cartridge folder. It travels through one host
+directory, `carts/` beside the drive file, reached only through three
+`HostCaps` methods (list, read, write), so the "four files" rule becomes
+"four files and one folder". Parent mode: `share <folder>` packs,
+`install <name>` unpacks into `/games/<name>` as root (executable bits and
+shebang files become 755), `uninstall` removes, `carts` lists. Kids get
+`newgame <name>`, which scaffolds a runnable BASIC cartridge in `~`.
+`export` could not be the command name: it is the shell's variable builtin.
+
 ## `edit`
 
 A nano-alike in `kiddos-builtins/src/edit.rs`, full-screen through the

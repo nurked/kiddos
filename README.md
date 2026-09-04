@@ -35,8 +35,11 @@ KIDDOS_HOME=/tmp/kiddos-dev cargo run -p kiddos
 ```
 
 The parent chord is **Ctrl+Alt+Shift+P** (Cmd works as Ctrl on macOS). Parent
-mode can `exit-fullscreen`, `reset-drive`, `set-lang`, `passwd`, read the `log`
-and `shutdown`.
+mode can `exit-fullscreen`, `reset-drive`, `set-name`, `passwd`, read the `log`,
+`shutdown`, and move games in and out: `carts`, `install`, `uninstall`, `share`.
+Cartridges are `.kdc` files (plain zips) in the app's `carts/` folder next to the
+drive, the only place files cross between the fake machine and the real one.
+A kid starts their own with `newgame rocket`.
 
 ## Poke at it without a window
 
@@ -65,7 +68,7 @@ crates/kiddos-shell     ksh: lexer, parser, expansion, line editor, executor
 crates/kiddos-builtins  every command, one file per group
 crates/kiddos-man       Markdown man renderer, lookup, search, pager
 crates/kiddos-tutor     lesson state machine (TOML lessons, ~/.progress, badges)
-crates/kiddos-cart      cartridge manifest, listing, launching
+crates/kiddos-cart      cartridge manifest, launching, .kdc pack/unpack, install/share
 crates/kiddos-basic     EndBASIC 0.12 bound to the console and drive; SPEAK, BEEP, KEY$, TICK, PUT
 crates/kiddos-i18n      Fluent-syntax string bundles (English today; i18n-ready)
 crates/kiddos-render    wgpu renderer with the CRT shader
