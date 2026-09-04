@@ -1,0 +1,41 @@
+id = "02-where-am-i"
+title = "Where am I?"
+intro = "The drive is full of folders, and you are always standing in one of them. Three words tell you where you are and move you around: pwd, ls, cd."
+outro = "Lesson 2 done: pwd tells you where you are, ls shows what's here, cd moves you. If you ever get lost: cd (alone) takes you home."
+badge = """
+ .-------------.
+ |  EXPLORER   |
+ |  pwd ls cd  |
+ '-------------'"""
+
+[[steps]]
+say = "Type pwd. It prints where you are."
+expect = ["pwd"]
+hint = ["p, w, d. It means print working directory.", "Type: pwd"]
+done = "/home/kid is your home folder. Everything in it is yours."
+
+[[steps]]
+say = "Type ls to see what is here."
+expect = ["ls", "ls *"]
+hint = ["Type: ls"]
+done = "Blue names are folders you can walk into. Others are files."
+
+[[steps]]
+say = "Walk into the games folder: type cd /games"
+expect = ["cd /games", "cd games", "cd games/", "cd /games/", "cd ~/games"]
+check = "cwd /games"
+hint = ["cd means change directory. Then the name of the folder.", "Type: cd /games"]
+done = "Look at the prompt: it now says /games. Type ls if you want to peek."
+
+[[steps]]
+say = "Go back up one level: type cd .."
+expect = ["cd .."]
+hint = ["Two dots mean 'the folder above this one'.", "Type: cd .."]
+done = "You are in / now, the very top of the drive."
+
+[[steps]]
+say = "Now go home: type cd with nothing after it."
+expect = ["cd", "cd ~", "cd /home/kid"]
+check = "cwd /home/kid"
+hint = ["Type cd by itself, nothing after it."]
+done = "Home. The prompt shows ~ which is short for your home folder."

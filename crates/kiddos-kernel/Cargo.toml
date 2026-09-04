@@ -1,0 +1,13 @@
+[package]
+name = "kiddos-kernel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kiddos-console.workspace = true
+kiddos-vfs.workspace = true
+kiddos-i18n.workspace = true
+crossbeam-channel.workspace = true
+parking_lot.workspace = true
+log.workspace = true

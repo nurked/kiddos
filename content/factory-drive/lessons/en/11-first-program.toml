@@ -1,0 +1,43 @@
+id = "11-first-program"
+title = "Your first program"
+intro = "Scripts run shell commands. BASIC is a real programming language: it can ask questions, decide things, and count. Programs are files ending in .bas, and run runs them."
+outro = "Lesson 11 done: PRINT says, INPUT asks, IF decides, FOR repeats. That is most of programming. Type basic to try lines one at a time, and HELP inside it."
+badge = """
+ .-------------.
+ |    CODER    |
+ | PRINT INPUT |
+ '-------------'"""
+
+[[steps]]
+say = "Type edit hello.bas and write:   PRINT \"Hello, world\"   Save with Ctrl-S, quit with Ctrl-Q."
+expect = ["edit hello.bas"]
+check = "contains hello.bas PRINT"
+hint = ["PRINT is BASIC for 'show this'. The words go in double quotes.", "Type: edit hello.bas   then the line:  PRINT \"Hello, world\""]
+done = "A program of one line. Every language starts here."
+
+[[steps]]
+say = "Run it: run hello.bas"
+expect = ["run hello.bas", "basic hello.bas"]
+hint = ["Type: run hello.bas"]
+done = "That's your program talking. Now let it listen."
+
+[[steps]]
+say = "Edit hello.bas again and add two lines:   INPUT \"Your name\"; name$   and   PRINT \"Hi \"; name$   Then run it."
+expect = ["run hello.bas", "basic hello.bas"]
+check = "contains hello.bas INPUT"
+hint = ["INPUT asks a question and keeps the answer in a variable. name$ is a variable for words.", "The lines:  INPUT \"Your name\"; name$   and   PRINT \"Hi \"; name$   then: run hello.bas"]
+done = "The ; between pieces prints them next to each other."
+
+[[steps]]
+say = "Make it decide. Add:   IF name$ = \"Sam\" THEN PRINT \"Nice name!\"   (use a name you like) and run it."
+expect = ["run hello.bas", "basic hello.bas"]
+check = "contains hello.bas IF"
+hint = ["IF something THEN do this. On one line.", "The line:  IF name$ = \"Sam\" THEN PRINT \"Nice name!\"   then: run hello.bas"]
+done = "That's a decision. Computers make billions of these a second."
+
+[[steps]]
+say = "Now count. Make count.bas with:   FOR i = 1 TO 10   then   PRINT i   then   NEXT   and run it."
+expect = ["run count.bas", "basic count.bas"]
+check = "contains count.bas FOR"
+hint = ["FOR i = 1 TO 10 repeats everything up to NEXT, with i counting.", "Three lines:  FOR i = 1 TO 10  /  PRINT i  /  NEXT   then: run count.bas"]
+done = "Ten lines from three. Change 10 to 1000 if you dare."

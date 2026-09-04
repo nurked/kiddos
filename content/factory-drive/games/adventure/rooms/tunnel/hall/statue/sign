@@ -1,0 +1,7 @@
+Inside the hollow statue. Dusty. A small iron KEY lies here.
+The door is in the hall, next to this statue. Carry the key there:
+
+    mv key ../door
+    cd ../door
+
+(.. means "the folder above". ../door is the door next to us.)

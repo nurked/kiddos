@@ -1,0 +1,7 @@
+name = "hangman"
+title = "Hangman"
+version = "0.1.0"
+author = "KidDOS"
+entry = "hangman.bas"
+description = "guess the word one letter at a time"
+caps = ["speak", "sound"]

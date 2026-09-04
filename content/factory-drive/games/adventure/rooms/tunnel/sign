@@ -1,0 +1,6 @@
+It is dark in the tunnel. Do you have the torch? Type ls.
+If TORCH is here, you can see two ways on: HALL and PIT.
+
+The pit has a warning. Read it before you go in:   cat pit/warning
+(You can read a file inside a folder without going in. A path is
+a folder name, a slash, then the file name.)

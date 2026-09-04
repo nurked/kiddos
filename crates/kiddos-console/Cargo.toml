@@ -1,0 +1,9 @@
+[package]
+name = "kiddos-console"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "KidDOS text console: cell grid, keys, and the Console API contract every program sees."
+
+[dependencies]
+font8x8.workspace = true

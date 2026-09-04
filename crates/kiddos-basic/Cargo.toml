@@ -1,0 +1,18 @@
+[package]
+name = "kiddos-basic"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "BASIC for KidDOS: EndBASIC 0.12 (Apache-2.0) bound to the console and the virtual drive."
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-console.workspace = true
+# Pinned: 0.13+ relicensed to AGPL-3.0. 0.12 is Apache-2.0.
+endbasic-core = "=0.12.0"
+endbasic-std = "=0.12.0"
+endbasic-repl = "=0.12.0"
+async-trait = "0.1"
+async-channel = "2"
+futures-lite = "2"
+time = "0.3"

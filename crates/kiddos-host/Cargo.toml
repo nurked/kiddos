@@ -1,0 +1,21 @@
+[package]
+name = "kiddos-host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The real machine: window, keys, speech, sound, clock, persistence, parent password."
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-console.workspace = true
+kiddos-i18n.workspace = true
+winit.workspace = true
+directories.workspace = true
+argon2 = { version = "0.5", features = ["std"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+serde.workspace = true
+toml.workspace = true
+log.workspace = true
+parking_lot.workspace = true
+cpal = "0.15"
+libc = "0.2"

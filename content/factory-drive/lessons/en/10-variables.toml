@@ -1,0 +1,33 @@
+id = "10-variables"
+title = "Variables"
+intro = "A variable is a name that holds some words. $NAME gives them back. The machine already keeps a few."
+outro = "Lesson 10 done: export sets a variable, $NAME reads it, env lists them. That's the whole tutor for now. Type games."
+badge = """
+ .-------------.
+ |  $VARIABLE  |
+ |  export env |
+ '-------------'"""
+
+[[steps]]
+say = "Ask for your name: echo $NAME"
+expect = ["echo $NAME"]
+hint = ["The $ means: the value of. Type: echo $NAME"]
+done = "That came from when you said hi. (If it's empty, type hi.)"
+
+[[steps]]
+say = "Make your own: export PET=cat   (or whatever your pet is)"
+expect = ["export PET=*", "PET=*"]
+hint = ["No spaces around the = sign.", "Type: export PET=cat"]
+done = "Now the machine remembers PET."
+
+[[steps]]
+say = "Use it in a sentence: echo I have a $PET"
+expect = ["echo * $PET*", "echo $PET*"]
+hint = ["Type: echo I have a $PET"]
+done = "The machine swapped $PET for its value before echo saw it."
+
+[[steps]]
+say = "See all the variables: env"
+expect = ["env", "export"]
+hint = ["Type: env"]
+done = "HOME, USER, PATH: the machine's own notes about you. Programs read these."

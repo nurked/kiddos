@@ -1,0 +1,19 @@
+Hi!
+
+This is your computer. Everything in it is yours.
+
+Some things to try:
+
+  ls          - see what is here
+  cat file    - read a file
+  mkdir box   - make a folder called box
+  cd box      - go inside it
+  cd ..       - come back out
+  help        - see everything I know
+  man ls      - read about ls
+
+You cannot break anything. If it all goes wrong, a parent can
+reset the drive and we start again, like new.
+
+Have fun,
+  the machine

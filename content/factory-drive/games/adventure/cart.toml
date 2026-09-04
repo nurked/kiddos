@@ -1,0 +1,10 @@
+name = "adventure"
+title = "The Drive Below"
+version = "0.1.0"
+author = "KidDOS"
+entry = "main.sh"
+description = "a cave where rooms are folders and things are files"
+lang = ["en"]
+difficulty = 1
+caps = ["speak"]
+world = ["~/cave"]

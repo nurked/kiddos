@@ -1,0 +1,27 @@
+id = "01-hello"
+title = "Hello"
+intro = "I'm the tutor. I live inside the machine and I'll pop up when you do something new. Let's start."
+outro = "Lesson 1 done: you can talk to the machine. Every word you type is a command. Enter sends it."
+badge = """
+ .-------------.
+ |   HELLO!    |
+ |   > hi_     |
+ '-------------'"""
+
+[[steps]]
+say = "Type hi and press Enter."
+expect = ["hi"]
+hint = ["It is two letters: h then i. Then the big Enter key.", "Type exactly: hi"]
+done = "That's the machine saying hello back. It only knows words from its list."
+
+[[steps]]
+say = "Now type help. It shows every word the machine knows. Press Space to see more, q to stop."
+expect = ["help", "help *"]
+hint = ["Type: help"]
+done = "That's the whole vocabulary. You will not need all of it today."
+
+[[steps]]
+say = "One more: type fortune."
+expect = ["fortune"]
+hint = ["Type: fortune"]
+done = "Ha. Type it again later; it changes."

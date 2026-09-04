@@ -1,0 +1,77 @@
+# KidDOS
+
+A fantasy computer for learning to drive a real one.
+
+A single native app opens fullscreen and presents a retro machine: a CRT
+terminal, a Unix-flavored shell, a virtual hard drive, a manual, and (later)
+BASIC, a WASM sandbox for C/Go/Pascal, and game cartridges. There is no
+internet, no host filesystem, no mouse. A child types `hi` and the machine
+talks back.
+
+Status: **v0.3, end of Phase 2** (foundations, tutor, BASIC). A kid can boot,
+explore, make files, read the manual, follow twelve lessons with a tutor that
+watches the shell, write with `edit`, program in BASIC, and play seven
+cartridges: a cave adventure whose rooms are folders, and guess, snake,
+hangman, typing, tetris and sokoban written in BASIC that the kid can read,
+copy and change. See [kiddos-plan.md](kiddos-plan.md) for the full plan and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it is built.
+
+## Run it
+
+```bash
+cargo run --release -p kiddos
+```
+
+Start windowed instead of fullscreen while developing:
+
+```bash
+KIDDOS_WINDOWED=1 cargo run -p kiddos
+```
+
+Keep the drive somewhere other than the default app-support directory:
+
+```bash
+KIDDOS_HOME=/tmp/kiddos-dev cargo run -p kiddos
+```
+
+The parent chord is **Ctrl+Alt+Shift+P** (Cmd works as Ctrl on macOS). Parent
+mode can `exit-fullscreen`, `reset-drive`, `set-lang`, `passwd`, read the `log`
+and `shutdown`.
+
+## Poke at it without a window
+
+```bash
+cargo run -p kiddos-headless -- -
+```
+
+Type commands; the 80x25 screen is printed after each one. Scripts of
+keystrokes (with `{tab}`, `{up}`, `{ctrl-c}` tokens) run with
+`cargo run -p kiddos-headless -- script.txt`; the same harness drives the
+integration tests in `tools/headless/tests`.
+
+## Test
+
+```bash
+cargo test --workspace
+```
+
+## Layout
+
+```
+crates/kiddos-console   cell grid, keys, the Console API contract
+crates/kiddos-vfs       inode tree, Unix modes, SQLite image, factory import
+crates/kiddos-kernel    processes, pipes, capabilities, host bridge
+crates/kiddos-shell     ksh: lexer, parser, expansion, line editor, executor
+crates/kiddos-builtins  every command, one file per group
+crates/kiddos-man       Markdown man renderer, lookup, search, pager
+crates/kiddos-tutor     lesson state machine (TOML lessons, ~/.progress, badges)
+crates/kiddos-cart      cartridge manifest, listing, launching
+crates/kiddos-basic     EndBASIC 0.12 bound to the console and drive; SPEAK, BEEP, KEY$, TICK, PUT
+crates/kiddos-i18n      Fluent-syntax string bundles (English today; i18n-ready)
+crates/kiddos-render    wgpu renderer with the CRT shader
+crates/kiddos-host      window, keys, speech, sound, config dir, parent password
+app/                   the binary (embeds the factory drive at build time)
+content/factory-drive  what the kid sees on first boot: /etc, /home/kid, man pages, lessons, games
+tools/headless         no-window machine + test harness
+tools/mkdrive          content dir → drive.kdd
+```

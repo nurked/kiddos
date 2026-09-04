@@ -1,0 +1,41 @@
+id = "09-scripts"
+title = "Scripts"
+intro = "Put commands in a file, and the file becomes a program. That is a script, and it is how most of the world's computers are run."
+outro = "Lesson 9 done: a script is commands in a file, chmod +x makes it runnable, ~/bin makes it a word the machine knows."
+badge = """
+ .-------------.
+ |  PROGRAMMER |
+ |  #!/bin/ksh |
+ '-------------'"""
+
+[[steps]]
+say = "Type edit greet.sh and write two lines: echo Hello there   and   date   Then save and quit."
+expect = ["edit greet.sh"]
+check = "contains greet.sh echo"
+hint = ["Each line is a command, exactly as you would type it.", "Type: edit greet.sh   then write:  echo Hello there"]
+done = "A file full of commands. Not a program yet."
+
+[[steps]]
+say = "Make it runnable: chmod +x greet.sh"
+expect = ["chmod +x greet.sh", "chmod +x ./greet.sh", "chmod 755 greet.sh"]
+hint = ["+x means: allowed to execute.", "Type: chmod +x greet.sh"]
+done = "ls shows it green now. Green means runnable."
+
+[[steps]]
+say = "Run it: ./greet.sh"
+expect = ["./greet.sh"]
+hint = ["The ./ means 'the one right here'.", "Type: ./greet.sh"]
+done = "Your first program ran. Every line, in order."
+
+[[steps]]
+say = "Programs in ~/bin can be run from anywhere by name. Move it there: mv greet.sh ~/bin"
+expect = ["mv greet.sh ~/bin", "mv greet.sh ~/bin/", "mv greet.sh bin", "mv greet.sh bin/"]
+check = "exists ~/bin/greet.sh"
+hint = ["Type: mv greet.sh ~/bin"]
+done = "Now it lives with hello, the script that was already there."
+
+[[steps]]
+say = "Run it by name, from anywhere: greet.sh"
+expect = ["greet.sh"]
+hint = ["Just the name, no ./ this time.", "Type: greet.sh"]
+done = "You added a word to the machine. That is what programming is."

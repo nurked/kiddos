@@ -1,0 +1,14 @@
+[package]
+name = "kiddos-render"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Text grid → GPU quad with a CRT shader (wgpu)."
+
+[dependencies]
+kiddos-console.workspace = true
+wgpu.workspace = true
+winit.workspace = true
+bytemuck.workspace = true
+pollster.workspace = true
+log.workspace = true

@@ -1,0 +1,6 @@
+#!/bin/ksh
+# This is a script. It is a list of commands in a file.
+# Run it with: hello
+echo Hello from your first script!
+echo Today is:
+date

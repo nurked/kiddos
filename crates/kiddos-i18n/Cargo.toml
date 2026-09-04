@@ -1,0 +1,8 @@
+[package]
+name = "kiddos-i18n"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "KidDOS UI strings. Fluent-syntax .ftl bundles for en and ru, embedded."
+
+[dependencies]

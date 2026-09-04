@@ -1,0 +1,11 @@
+[package]
+name = "kiddos-shell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ksh, the kid shell: a POSIX-flavored subset with a friendly voice."
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-vfs.workspace = true
+strsim.workspace = true

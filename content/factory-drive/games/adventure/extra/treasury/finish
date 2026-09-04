@@ -1,0 +1,9 @@
+#!/bin/ksh
+cat /games/adventure/extra/badge.txt
+mkdir -p ~/badges
+cp /games/adventure/extra/badge.txt ~/badges/adventure.txt
+echo
+echo "A badge is saved in ~/badges. Type badges to see them all."
+echo
+echo "You are deep in the cave. To go home from anywhere, type cd by itself."
+echo "You found the treasure. Well done, explorer." > /dev/speaker

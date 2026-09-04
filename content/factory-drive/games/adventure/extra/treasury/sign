@@ -1,0 +1,11 @@
+Gold! Well, a CHEST of it. Look inside:   cat chest
+
+And a WALL where every explorer writes their name. Write yours:
+
+    echo YOURNAME > wall
+    cat wall
+
+Then pull the last lever:   ./finish
+
+If the lever will not budge, look at it with   ls -l finish
+A program needs an x to run. Give it one:   chmod +x finish

@@ -1,0 +1,28 @@
+id = "08-editing"
+title = "Editing"
+intro = "echo is fine for one line. For real writing there is edit: a whole screen to type into."
+outro = "Lesson 8 done: edit opens a file, Ctrl-S saves, Ctrl-Q quits. You can write anything now."
+badge = """
+ .-------------.
+ |   EDITOR    |
+ |  ^S  ^Q  ^K |
+ '-------------'"""
+
+[[steps]]
+say = "Type edit story.txt, write a few lines, then Ctrl-S to save and Ctrl-Q to quit."
+expect = ["edit story.txt"]
+check = "file story.txt"
+hint = ["Hold Ctrl and press S to save. Then Ctrl and Q to quit.", "Type: edit story.txt   (and remember Ctrl-S before Ctrl-Q)"]
+done = "Saved. edit is a program, like on real computers (it copies one called nano)."
+
+[[steps]]
+say = "Read your story: cat story.txt"
+expect = ["cat story.txt", "less story.txt"]
+hint = ["Type: cat story.txt"]
+done = "Exactly what you typed."
+
+[[steps]]
+say = "Count your words: wc story.txt"
+expect = ["wc story.txt", "wc -w story.txt"]
+hint = ["Type: wc story.txt"]
+done = "Lines, words, letters. Writers count words. So does wc."

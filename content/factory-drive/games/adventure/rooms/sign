@@ -1,0 +1,10 @@
+You stand at the mouth of the cave. Wind whistles from the TUNNEL.
+
+There is a TORCH on the ground (ls shows it). Take it with you into
+the tunnel like this:
+
+    mv torch tunnel
+    cd tunnel
+
+(mv moves a file into a folder. That is how you carry things here.
+ Lost? cd by itself always takes you home. cd ~/cave brings you back.)

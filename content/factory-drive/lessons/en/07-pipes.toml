@@ -1,0 +1,40 @@
+id = "07-pipes"
+title = "Pipes"
+intro = "Here is the trick that makes small commands powerful. The | sign (a pipe) sends what one command prints into the next command."
+outro = "Lesson 7 done: | joins commands, grep finds, sort orders, wc counts, > saves. Small tools, joined, do big things."
+badge = """
+ .-------------.
+ |   PLUMBER   |
+ |  a | b | c  |
+ '-------------'"""
+
+[[steps]]
+say = "Count the commands in /bin: ls /bin | wc -l"
+expect = ["ls /bin | wc -l", "ls /bin/ | wc -l"]
+hint = ["ls /bin lists them, wc -l counts lines. The pipe joins them.", "Type: ls /bin | wc -l"]
+done = "wc never saw a file. It counted what ls printed."
+
+[[steps]]
+say = "Find commands with an s in them: ls /bin | grep s"
+expect = ["ls /bin | grep s", "ls /bin/ | grep s"]
+hint = ["grep keeps only lines containing what you give it.", "Type: ls /bin | grep s"]
+done = "grep is the finder. It works on any text you pipe into it."
+
+[[steps]]
+say = "Shout the letter: cat welcome.txt | tr a-z A-Z"
+expect = ["cat welcome.txt | tr a-z A-Z"]
+hint = ["tr swaps letters: a-z become A-Z.", "Type: cat welcome.txt | tr a-z A-Z"]
+done = "Three commands and a pipe. Now chain three."
+
+[[steps]]
+say = "The last three commands, backwards: ls /bin | sort -r | head -3"
+expect = ["ls /bin | sort -r | head -3", "ls /bin/ | sort -r | head -3"]
+hint = ["sort -r puts lines in reverse order, head -3 keeps the first three.", "Type: ls /bin | sort -r | head -3"]
+done = "You can chain as many as you like."
+
+[[steps]]
+say = "Save a list to a file: ls /bin > list.txt   then look at it with cat."
+expect = ["ls /bin > list.txt", "ls /bin/ > list.txt"]
+check = "file list.txt"
+hint = ["Type: ls /bin > list.txt"]
+done = "Pipes go into commands, arrows go into files."

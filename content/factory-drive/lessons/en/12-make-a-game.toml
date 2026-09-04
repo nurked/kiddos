@@ -1,0 +1,36 @@
+id = "12-make-a-game"
+title = "Make a game"
+intro = "A game is a program that draws, waits for a key, and does it again. KidDOS BASIC has PUT to draw anywhere and KEY$ to wait for a key. The games in /games are BASIC programs too: you can read them and change them."
+outro = "Lesson 12 done. You can read, run, and change the games on this machine. That is how every programmer started. Type games."
+badge = """
+ .-------------.
+ |  GAME MAKER |
+ |  PUT  KEY$  |
+ '-------------'"""
+
+[[steps]]
+say = "Make draw.bas with:   CLS   then   PUT 10, 5, \"HELLO\", 14, 1   then   k$ = KEY$   and run it. Press a key to end it."
+expect = ["run draw.bas", "basic draw.bas"]
+check = "contains draw.bas PUT"
+hint = ["PUT x, y, text, color, background draws text at a spot. KEY$ waits for a key.", "Three lines:  CLS  /  PUT 10, 5, \"HELLO\", 14, 1  /  k$ = KEY$   then: run draw.bas"]
+done = "Yellow on blue, exactly where you said. Try other numbers for x, y and colors 0-15."
+
+[[steps]]
+say = "Copy a real game to your home so you can change it:   cp /games/guess/guess.bas mygame.bas"
+expect = ["cp /games/guess/guess.bas mygame.bas", "cp /games/guess/guess.bas *"]
+check = "exists mygame.bas"
+hint = ["Type: cp /games/guess/guess.bas mygame.bas"]
+done = "Now it is yours. cat mygame.bas to read it."
+
+[[steps]]
+say = "Run your copy: run mygame.bas   (Ctrl-C stops any program.)"
+expect = ["run mygame.bas", "basic mygame.bas"]
+hint = ["Type: run mygame.bas"]
+done = "Same game. Now make it different."
+
+[[steps]]
+say = "Edit mygame.bas: change the 100 to 10 so it is easier, or change what it says. Then run it again."
+expect = ["run mygame.bas", "basic mygame.bas"]
+check = "missing /nothing"
+hint = ["edit mygame.bas, find the 100, make it 10, Ctrl-S, Ctrl-Q, then run mygame.bas"]
+done = "You changed a game and it obeyed. Look at the others in /games. Every one is a text file."

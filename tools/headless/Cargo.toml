@@ -1,0 +1,22 @@
+[package]
+name = "kiddos-headless"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Run KidDOS with no window: replay keystroke scripts and dump the screen. The integration test harness."
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "kiddos-headless"
+path = "src/main.rs"
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-vfs.workspace = true
+kiddos-shell.workspace = true
+kiddos-builtins.workspace = true
+kiddos-tutor.workspace = true
+kiddos-basic.workspace = true
+kiddos-console.workspace = true

@@ -1,0 +1,4 @@
+A heavy locked door. There is a lever called OPEN.
+A lever is a program: you run it by typing   ./open
+(The ./ means "the one right here in this room".)
+If the KEY is in this room (check with ls), the door will open.

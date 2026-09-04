@@ -1,0 +1,41 @@
+id = "03-files"
+title = "Files"
+intro = "A file is words kept in a box with a name. cat opens the box. echo with > puts words into a box."
+outro = "Lesson 3 done: cat reads, echo > writes, echo >> adds, touch makes an empty one."
+badge = """
+ .-------------.
+ |   WRITER    |
+ |  echo > cat |
+ '-------------'"""
+
+[[steps]]
+say = "There is a letter for you. Type cat welcome.txt"
+expect = ["cat welcome.txt", "cat ~/welcome.txt", "less welcome.txt"]
+hint = ["cat shows what is inside a file. Then the file name.", "Type: cat welcome.txt"]
+done = "That's cat: it prints a file on the screen."
+
+[[steps]]
+say = "Make your own file. Type: echo hello > note.txt"
+expect = ["echo * > note.txt", "echo * >note.txt"]
+check = "file note.txt"
+hint = ["The > arrow sends the words into the file instead of the screen.", "Type: echo hello > note.txt"]
+done = "Nothing printed, because the words went into note.txt instead."
+
+[[steps]]
+say = "Read it back: cat note.txt"
+expect = ["cat note.txt"]
+hint = ["Type: cat note.txt"]
+done = "There they are."
+
+[[steps]]
+say = "Add a second line with two arrows: echo more >> note.txt"
+expect = ["echo * >> note.txt", "echo * >>note.txt"]
+hint = [">> adds to the end. A single > would replace everything.", "Type: echo more >> note.txt"]
+done = "Now cat note.txt shows two lines. Try it."
+
+[[steps]]
+say = "Last: touch empty.txt makes an empty file. Then ls to see it."
+expect = ["touch empty.txt", "touch *"]
+check = "file empty.txt"
+hint = ["Type: touch empty.txt"]
+done = "An empty file. Zero bytes. Still a file."

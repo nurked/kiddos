@@ -1,0 +1,3 @@
+Click. Nothing. The door stays shut. You need the KEY here, in this
+room. It is under the statue:   mv ../statue/key .
+(The dot at the end means "here".)

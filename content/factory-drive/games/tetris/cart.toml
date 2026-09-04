@@ -1,0 +1,7 @@
+name = "tetris"
+title = "Tetris"
+version = "0.1.0"
+author = "KidDOS"
+entry = "tetris.bas"
+description = "falling blocks; fill a line to clear it"
+caps = ["speak", "sound"]

@@ -1,0 +1,7 @@
+name = "snake"
+title = "Snake"
+version = "0.1.0"
+author = "KidDOS"
+entry = "snake.bas"
+description = "steer the snake, eat the @, don't bite yourself"
+caps = ["speak", "sound"]

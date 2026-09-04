@@ -1,0 +1,9 @@
+A long hall with a STATUE at one end and a heavy DOOR at the other.
+On a lectern lies a BOOK. It is long. Read it a page at a time:
+
+    less book        (Space turns the page, q quits)
+
+Somewhere in the book is the word "key". Reading it all is slow.
+Let the machine search for you:
+
+    grep key book

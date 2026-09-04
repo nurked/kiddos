@@ -1,0 +1,9 @@
+[package]
+name = "kiddos-man"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Man pages for kids: a tiny Markdown renderer, page lookup, search, and a pager."
+
+[dependencies]
+kiddos-kernel.workspace = true

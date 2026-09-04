@@ -1,0 +1,29 @@
+[package]
+name = "kiddos"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "KidDOS: a fantasy computer for learning to drive a real one."
+build = "build.rs"
+
+[[bin]]
+name = "kiddos"
+path = "src/main.rs"
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-vfs.workspace = true
+kiddos-console.workspace = true
+kiddos-shell.workspace = true
+kiddos-builtins.workspace = true
+kiddos-tutor.workspace = true
+kiddos-basic.workspace = true
+kiddos-render.workspace = true
+kiddos-host.workspace = true
+winit.workspace = true
+wgpu.workspace = true
+log.workspace = true
+env_logger.workspace = true
+
+[build-dependencies]
+kiddos-vfs.workspace = true

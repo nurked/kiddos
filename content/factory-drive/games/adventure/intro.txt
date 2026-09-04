@@ -1,0 +1,14 @@
+
+    T H E   D R I V E   B E L O W
+
+Under your home folder there is a cave. Its rooms are folders.
+The things in it are files. You already know how to move around.
+
+    cd ~/cave        go to the cave mouth
+    ls               look around
+    cat sign         read the sign in every room
+    cd <room>        walk into a room
+    cd ..            walk back out
+    cd               (by itself) go straight home from anywhere
+
+Go on. Start with:   cd ~/cave

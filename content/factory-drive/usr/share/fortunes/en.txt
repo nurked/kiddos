@@ -1,0 +1,21 @@
+Every expert was once a beginner who kept typing.
+%
+Computers are fast, obedient, and very literal. Say exactly what you mean.
+%
+The best way to learn a command is to try it and see what happens.
+%
+rm is forever. Think, then press Enter.
+%
+A folder is just a file that holds other files.
+%
+If you are lost, type pwd. It always tells the truth.
+%
+Tab is your friend. Press it and I will finish the word for you.
+%
+The manual is not scary. Type man ls and see.
+%
+Small programs, joined with |, can do big things.
+%
+There is no such thing as a stupid question. There is only man -k.
+%
+You cannot break this machine. Go on, try things.

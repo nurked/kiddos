@@ -1,0 +1,7 @@
+name = "guess"
+title = "Guess the Number"
+version = "0.1.0"
+author = "KidDOS"
+entry = "main.sh"
+description = "the first BASIC program to read, run, and change"
+caps = ["speak", "sound"]

@@ -1,0 +1,2 @@
+CLUNK. The key turns. The door swings open and a new room appears:
+TREASURY. Go in:   cd treasury

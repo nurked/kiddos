@@ -1,0 +1,7 @@
+name = "typing"
+title = "Typing Practice"
+version = "0.1.0"
+author = "KidDOS"
+entry = "typing.bas"
+description = "type what you see, as fast as you can"
+caps = ["speak", "sound"]

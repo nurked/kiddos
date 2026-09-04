@@ -1,0 +1,7 @@
+name = "sokoban"
+title = "Sokoban"
+version = "0.1.0"
+author = "KidDOS"
+entry = "sokoban.bas"
+description = "push every box onto a target (think first)"
+caps = ["speak", "sound"]

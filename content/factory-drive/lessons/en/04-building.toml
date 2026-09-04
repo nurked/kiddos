@@ -1,0 +1,43 @@
+id = "04-building"
+title = "Building"
+intro = "Folders hold files. mkdir makes a folder, mv moves things, cp copies, rm removes. One of these is dangerous."
+outro = "Lesson 4 done: mkdir mv cp rm. And you learned the rule: rm is forever."
+badge = """
+ .-------------.
+ |   BUILDER   |
+ | mkdir mv cp |
+ '-------------'"""
+
+[[steps]]
+say = "Make a folder: mkdir box"
+expect = ["mkdir box", "mkdir box/"]
+check = "dir box"
+hint = ["Type: mkdir box"]
+done = "A new folder. ls shows it in blue."
+
+[[steps]]
+say = "Move your note into it: mv note.txt box"
+expect = ["mv note.txt box", "mv note.txt box/", "mv note.txt box/note.txt"]
+check = "exists box/note.txt"
+hint = ["mv takes two things: what to move, and where to.", "Type: mv note.txt box"]
+done = "Gone from here, now inside box. Try ls box"
+
+[[steps]]
+say = "Copy it back out with a new name: cp box/note.txt copy.txt"
+expect = ["cp box/note.txt copy.txt", "cp box/note.txt *"]
+hint = ["cp works like mv but leaves the original.", "Type: cp box/note.txt copy.txt"]
+done = "Now there are two. The path box/note.txt means: note.txt inside box."
+
+[[steps]]
+say = "Now the dangerous one. There is no trash can here. rm copy.txt removes it forever."
+expect = ["rm copy.txt"]
+check = "missing copy.txt"
+hint = ["Type: rm copy.txt"]
+done = "Gone. Forever. That is true on every real computer too. Think before rm."
+
+[[steps]]
+say = "A folder with things inside needs rm -r. Try: rm -r box"
+expect = ["rm -r box", "rm -r box/", "rm -rf box"]
+check = "missing box"
+hint = ["-r means 'and everything inside'.", "Type: rm -r box"]
+done = "Box and note, both gone. You now hold the most dangerous word on the machine."

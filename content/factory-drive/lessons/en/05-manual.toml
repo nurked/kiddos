@@ -1,0 +1,27 @@
+id = "05-manual"
+title = "Reading the manual"
+intro = "You will forget things. That is fine: the machine carries its own book. man opens it."
+outro = "Lesson 5 done: man <word> explains a word, man -k <topic> finds words. You can now teach yourself."
+badge = """
+ .-------------.
+ |   READER    |
+ |  man man -k |
+ '-------------'"""
+
+[[steps]]
+say = "Type man ls. Space turns the page, q quits."
+expect = ["man ls"]
+hint = ["man means manual.", "Type: man ls"]
+done = "Every command has a page like that. TRY THIS is the part to try."
+
+[[steps]]
+say = "Don't know the word? Search for it: man -k folder"
+expect = ["man -k folder", "apropos folder", "man -k *", "apropos *"]
+hint = ["-k means keyword: search all pages for it.", "Type: man -k folder"]
+done = "Those are all the pages that mention folders."
+
+[[steps]]
+say = "Yes, even man has a page. Type man man"
+expect = ["man man"]
+hint = ["Type: man man"]
+done = "Now you can look anything up. That is most of what grown-ups do."

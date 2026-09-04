@@ -1,0 +1,27 @@
+id = "06-talking"
+title = "The machine can talk"
+intro = "The machine has a voice. And because everything here is a file, the speaker is a file too."
+outro = "Lesson 6 done: speak, /dev/speaker, beep. Everything is a file, even the loudspeaker."
+badge = """
+ .-------------.
+ |   SPEAKER   |
+ |  ))) hi ((( |
+ '-------------'"""
+
+[[steps]]
+say = "Type: speak hello there"
+expect = ["speak *"]
+hint = ["Type: speak hello there"]
+done = "Turn the sound up if you heard nothing."
+
+[[steps]]
+say = "Now the strange way. Send words into the speaker file: echo good morning > /dev/speaker"
+expect = ["echo * > /dev/speaker", "echo * >/dev/speaker"]
+hint = ["It is just like writing a file, but the file is the speaker.", "Type: echo good morning > /dev/speaker"]
+done = "The speaker is a file. The screen is a file (/dev/tty). Everything is a file."
+
+[[steps]]
+say = "Type beep. Then try beep 200 400 (how high, how long)."
+expect = ["beep", "beep *"]
+hint = ["Type: beep"]
+done = "That's the whole sound system. Games use it."

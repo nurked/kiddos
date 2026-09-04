@@ -1,0 +1,69 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/kiddos-console",
+    "crates/kiddos-vfs",
+    "crates/kiddos-kernel",
+    "crates/kiddos-shell",
+    "crates/kiddos-builtins",
+    "crates/kiddos-man",
+    "crates/kiddos-cart",
+    "crates/kiddos-tutor",
+    "crates/kiddos-basic",
+    "crates/kiddos-i18n",
+    "crates/kiddos-render",
+    "crates/kiddos-host",
+    "app",
+    "tools/mkdrive",
+    "tools/headless",
+]
+
+[workspace.package]
+version = "0.3.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["Ivan Roganov"]
+
+[workspace.dependencies]
+kiddos-console = { path = "crates/kiddos-console" }
+kiddos-vfs = { path = "crates/kiddos-vfs" }
+kiddos-kernel = { path = "crates/kiddos-kernel" }
+kiddos-shell = { path = "crates/kiddos-shell" }
+kiddos-builtins = { path = "crates/kiddos-builtins" }
+kiddos-man = { path = "crates/kiddos-man" }
+kiddos-cart = { path = "crates/kiddos-cart" }
+kiddos-tutor = { path = "crates/kiddos-tutor" }
+kiddos-basic = { path = "crates/kiddos-basic" }
+kiddos-i18n = { path = "crates/kiddos-i18n" }
+kiddos-render = { path = "crates/kiddos-render" }
+kiddos-host = { path = "crates/kiddos-host" }
+
+thiserror = "2"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
+rusqlite = { version = "0.37", features = ["bundled"] }
+crossbeam-channel = "0.5"
+parking_lot = "0.12"
+strsim = "0.11"
+unicode-width = "0.2"
+directories = "6"
+argon2 = "0.5"
+rand = "0.9"
+log = "0.4"
+env_logger = "0.11"
+winit = "0.30"
+wgpu = "26"
+pollster = "0.4"
+bytemuck = { version = "1", features = ["derive"] }
+font8x8 = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4
+strip = true
+
+[profile.dev.package."*"]
+opt-level = 2

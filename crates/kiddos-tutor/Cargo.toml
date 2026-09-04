@@ -1,0 +1,14 @@
+[package]
+name = "kiddos-tutor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The tutor: a lesson state machine that watches the shell and talks back."
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-vfs.workspace = true
+kiddos-cart.workspace = true
+serde.workspace = true
+toml.workspace = true
+parking_lot.workspace = true

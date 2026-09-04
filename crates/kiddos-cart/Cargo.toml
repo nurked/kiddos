@@ -1,0 +1,13 @@
+[package]
+name = "kiddos-cart"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Cartridges: a game is a folder with a cart.toml. Manifest, listing, launching."
+
+[dependencies]
+kiddos-kernel.workspace = true
+kiddos-vfs.workspace = true
+kiddos-console.workspace = true
+serde.workspace = true
+toml.workspace = true

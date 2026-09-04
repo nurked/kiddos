@@ -1,0 +1,2 @@
+#!/bin/ksh
+ls key > /dev/null 2> /dev/null && cp -r /games/adventure/extra/treasury treasury && cat /games/adventure/extra/opened.txt && echo "The door opens" > /dev/speaker || cat /games/adventure/extra/locked.txt
