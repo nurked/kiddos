@@ -8,8 +8,8 @@ BASIC, a WASM sandbox for C/Go/Pascal, and game cartridges. There is no
 internet, no host filesystem, no mouse. A child types `hi` and the machine
 talks back.
 
-Status: **v0.4, Phase 3 in progress** (foundations, tutor, BASIC, the WASM
-sandbox). A kid can boot, explore, make files, read the manual, follow twelve
+Status: **v0.4, end of Phase 3** (foundations, tutor, BASIC, the WASM
+sandbox with C and Go). A kid can boot, explore, make files, read the manual, follow twelve
 lessons with a tutor that watches the shell, write with `edit`, program in
 BASIC, play seven cartridges (a cave adventure whose rooms are folders, and
 guess, snake, hangman, typing, tetris and sokoban in BASIC that the kid can
