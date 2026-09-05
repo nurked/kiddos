@@ -1,13 +1,16 @@
-//! KidDOS statements: SPEAK, BEEP, KEY$, TICK, PUT. They mirror the console
-//! API one to one.
+//! KidDOS statements: SPEAK, BEEP, KEY$, TICK, PUT, and for pixel mode
+//! SCREEN, PALETTE, GFX_TEXT, GFX_FLIP, GFX_GET, KEYDOWN. They mirror the
+//! console API one to one.
 
 use async_trait::async_trait;
 use endbasic_core::ast::{ArgSep, ExprType};
 use endbasic_core::compiler::{ArgSepSyntax, RequiredValueSyntax, SingularArgSyntax};
 use endbasic_core::exec::{Machine, Result, Scope};
 use endbasic_core::syms::{Callable, CallableMetadata, CallableMetadataBuilder};
+use endbasic_std::console::Console as EbConsole;
 use kiddos_kernel::{Console, Proc};
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -25,12 +28,53 @@ macro_rules! arg {
     };
 }
 
-pub fn add_all(machine: &mut Machine, p: Arc<Proc>) {
+pub fn add_all(machine: &mut Machine, p: Arc<Proc>, console: Rc<RefCell<dyn EbConsole>>) {
     machine.add_callable(Rc::new(Speak::new(p.clone())));
     machine.add_callable(Rc::new(Beep::new(p.clone())));
     machine.add_callable(Rc::new(KeyFn::new(p.clone())));
     machine.add_callable(Rc::new(Tick::new(p.clone())));
-    machine.add_callable(Rc::new(Put::new(p)));
+    machine.add_callable(Rc::new(Put::new(p.clone())));
+    machine.add_callable(Rc::new(ScreenMode::new(p.clone())));
+    machine.add_callable(Rc::new(Palette::new(p.clone())));
+    machine.add_callable(Rc::new(GfxText::new(p.clone(), console)));
+    machine.add_callable(Rc::new(GfxFlip::new(p.clone())));
+    machine.add_callable(Rc::new(GfxGet::new(p.clone())));
+    machine.add_callable(Rc::new(KeyDown::new(p)));
+}
+
+/// The key a name from [`key_name`] stands for (case-insensitive).
+pub fn key_from_name(name: &str) -> Option<kiddos_kernel::Key> {
+    use kiddos_kernel::Key as K;
+    let n = name.trim().to_ascii_uppercase();
+    Some(match n.as_str() {
+        "SPACE" => K::Char(' '),
+        "ENTER" => K::Enter,
+        "BS" | "BACKSPACE" => K::Backspace,
+        "TAB" => K::Tab,
+        "ESC" | "ESCAPE" => K::Escape,
+        "UP" => K::Up,
+        "DOWN" => K::Down,
+        "LEFT" => K::Left,
+        "RIGHT" => K::Right,
+        "HOME" => K::Home,
+        "END" => K::End,
+        "PGUP" => K::PageUp,
+        "PGDOWN" | "PGDN" => K::PageDown,
+        "DEL" => K::Delete,
+        "INS" => K::Insert,
+        _ => {
+            if let Some(f) = n.strip_prefix('F').and_then(|d| d.parse::<u8>().ok()) {
+                return (1..=12).contains(&f).then_some(K::F(f));
+            }
+            let mut it = name.trim().chars();
+            let c = it.next()?;
+            if it.next().is_some() {
+                return None;
+            }
+            // letters are held as the lowercase key; KEYDOWN("A") means the A key
+            K::Char(c.to_lowercase().next().unwrap_or(c))
+        }
+    })
 }
 
 /// Turn EndBASIC's error text into something a kid can act on.
@@ -267,5 +311,244 @@ impl Callable for Put {
             );
         }
         Ok(())
+    }
+}
+
+struct ScreenMode {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+}
+
+impl ScreenMode {
+    fn new(p: Arc<Proc>) -> ScreenMode {
+        ScreenMode {
+            metadata: CallableMetadataBuilder::new("SCREEN")
+                .with_syntax(&[(&[arg!("mode", Integer, ArgSepSyntax::End)], None)])
+                .with_category(CATEGORY)
+                .with_description(
+                    "Picks the screen mode: SCREEN 13 is pixels (320 x 200, 256 colors), SCREEN 0 is \
+                     text again. GFX_ statements switch to pixels on their own; when a program ends in \
+                     pixel mode the picture stays until a key is pressed.",
+                )
+                .build(),
+            p,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for ScreenMode {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, mut scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        let mode = scope.pop_integer();
+        self.p.gfx_mode(mode != 0);
+        if mode != 0 {
+            self.p.gfx_flip();
+        }
+        Ok(())
+    }
+}
+
+struct Palette {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+}
+
+impl Palette {
+    fn new(p: Arc<Proc>) -> Palette {
+        Palette {
+            metadata: CallableMetadataBuilder::new("PALETTE")
+                .with_syntax(&[(
+                    &[
+                        arg!("color", Integer, ArgSepSyntax::Exactly(ArgSep::Long)),
+                        arg!("red", Integer, ArgSepSyntax::Exactly(ArgSep::Long)),
+                        arg!("green", Integer, ArgSepSyntax::Exactly(ArgSep::Long)),
+                        arg!("blue", Integer, ArgSepSyntax::End),
+                    ],
+                    None,
+                )])
+                .with_category(CATEGORY)
+                .with_description(
+                    "Changes what a color number looks like in pixel mode: PALETTE color, red, green, blue \
+                     with each of red, green, blue from 0 to 255. Colors 0-15 start as the COLOR colors, \
+                     16-31 as grays, 32-247 as a rainbow cube: 32 + 36*r + 6*g + b with r, g, b from 0 to 5.",
+                )
+                .build(),
+            p,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for Palette {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, mut scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        let i = scope.pop_integer();
+        let r = scope.pop_integer();
+        let g = scope.pop_integer();
+        let b = scope.pop_integer();
+        let ch = |v: i32| v.clamp(0, 255) as u8;
+        self.p.gfx_palette(ch(i), [ch(r), ch(g), ch(b)]);
+        Ok(())
+    }
+}
+
+struct GfxText {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+    console: Rc<RefCell<dyn EbConsole>>,
+}
+
+impl GfxText {
+    fn new(p: Arc<Proc>, console: Rc<RefCell<dyn EbConsole>>) -> GfxText {
+        GfxText {
+            metadata: CallableMetadataBuilder::new("GFX_TEXT")
+                .with_syntax(&[(
+                    &[
+                        arg!("x", Integer, ArgSepSyntax::Exactly(ArgSep::Long)),
+                        arg!("y", Integer, ArgSepSyntax::Exactly(ArgSep::Long)),
+                        arg!("text", Text, ArgSepSyntax::End),
+                    ],
+                    None,
+                )])
+                .with_category(CATEGORY)
+                .with_description(
+                    "Writes text in pixel mode at pixel x, y with the current COLOR, 8 pixels per letter. \
+                     The background shows through.",
+                )
+                .build(),
+            p,
+            console,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for GfxText {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, mut scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        let x = scope.pop_integer();
+        let y = scope.pop_integer();
+        let text = scope.pop_string();
+        let (fg, _) = self.console.borrow().color();
+        if !self.p.gfx_on() {
+            self.p.gfx_mode(true);
+        }
+        self.p
+            .gfx_text(x, y, &text, fg.unwrap_or(kiddos_console::colors::DEFAULT_FG), None);
+        self.p.gfx_flip();
+        Ok(())
+    }
+}
+
+struct GfxFlip {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+}
+
+impl GfxFlip {
+    fn new(p: Arc<Proc>) -> GfxFlip {
+        GfxFlip {
+            metadata: CallableMetadataBuilder::new("GFX_FLIP")
+                .with_syntax(&[(&[], None)])
+                .with_category(CATEGORY)
+                .with_description(
+                    "Shows everything drawn since the last flip. Use GFX_SYNC FALSE first so drawing is \
+                     hidden until then: that is how games animate without flicker.",
+                )
+                .build(),
+            p,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for GfxFlip {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, _scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        if !self.p.gfx_on() {
+            self.p.gfx_mode(true);
+        }
+        self.p.gfx_flip();
+        Ok(())
+    }
+}
+
+struct GfxGet {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+}
+
+impl GfxGet {
+    fn new(p: Arc<Proc>) -> GfxGet {
+        GfxGet {
+            metadata: CallableMetadataBuilder::new("GFX_GET")
+                .with_return_type(ExprType::Integer)
+                .with_syntax(&[(
+                    &[
+                        arg!("x", Integer, ArgSepSyntax::Exactly(ArgSep::Long)),
+                        arg!("y", Integer, ArgSepSyntax::End),
+                    ],
+                    None,
+                )])
+                .with_category(CATEGORY)
+                .with_description("The color number of the pixel at x, y (0 outside the screen).")
+                .build(),
+            p,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for GfxGet {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, mut scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        let x = scope.pop_integer();
+        let y = scope.pop_integer();
+        scope.return_integer(self.p.gfx_get(x, y) as i32)
+    }
+}
+
+struct KeyDown {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+}
+
+impl KeyDown {
+    fn new(p: Arc<Proc>) -> KeyDown {
+        KeyDown {
+            metadata: CallableMetadataBuilder::new("KEYDOWN")
+                .with_return_type(ExprType::Boolean)
+                .with_syntax(&[(&[arg!("name", Text, ArgSepSyntax::End)], None)])
+                .with_category(CATEGORY)
+                .with_description(
+                    "TRUE while a key is held down: KEYDOWN(\"LEFT\"), KEYDOWN(\"SPACE\"), KEYDOWN(\"A\"). \
+                     For games where holding a key keeps you moving. KEY and INKEY$ report presses instead.",
+                )
+                .build(),
+            p,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for KeyDown {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, mut scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        let name = scope.pop_string();
+        let held = key_from_name(&name).map(|k| self.p.key_held(k)).unwrap_or(false);
+        scope.return_boolean(held)
     }
 }

@@ -2,8 +2,10 @@
 //!
 //! The grid is rasterized on the CPU (cols*8 x rows*16 pixels, 8x8 glyphs
 //! doubled vertically) and uploaded when it changes; the shader does the
-//! curvature, scan lines, glow and letterboxing. Nothing here knows about
-//! the kernel: it takes a [`Screen`] snapshot and draws it.
+//! curvature, scan lines, glow and letterboxing. In pixel mode the 320x200
+//! canvas is scaled into the same texture instead (2x2 for the 80x25
+//! grid), so the shader never knows which mode it is showing. Nothing here
+//! knows about the kernel: it takes a [`Screen`] snapshot and draws it.
 
 use kiddos_console::{font::glyph, Cell, Screen, PALETTE};
 use std::sync::Arc;
@@ -295,7 +297,24 @@ impl Renderer {
 pub fn rasterize_into(screen: &Screen, cursor_on: bool, pixels: &mut [u8]) {
     let (cols, rows) = (screen.cols() as usize, screen.rows() as usize);
     let tex_w = cols * CELL_W as usize;
-    assert_eq!(pixels.len(), tex_w * rows * CELL_H as usize * 4);
+    let tex_h = rows * CELL_H as usize;
+    assert_eq!(pixels.len(), tex_w * tex_h * 4);
+    if let Some(px) = screen.pixels() {
+        // pixel mode: nearest-neighbour scale of the front buffer
+        let (pw, ph) = (px.width() as usize, px.height() as usize);
+        let (front, pal) = (px.front(), px.palette());
+        for py in 0..tex_h {
+            let sy = py * ph / tex_h;
+            let src = &front[sy * pw..(sy + 1) * pw];
+            let dst = &mut pixels[py * tex_w * 4..(py + 1) * tex_w * 4];
+            for (x, out) in dst.chunks_exact_mut(4).enumerate() {
+                let c = pal[src[x * pw / tex_w] as usize];
+                out[..3].copy_from_slice(&c);
+                out[3] = 255;
+            }
+        }
+        return;
+    }
     let (cx, cy) = screen.cursor();
     let show_cursor = screen.cursor_visible() && cursor_on;
     let cells = screen.cells();
@@ -360,5 +379,27 @@ mod tests {
         if let Ok(dir) = std::env::var("KIDDOS_SHOT_DIR") {
             std::fs::write(std::path::Path::new(&dir).join("screen.ppm"), &ppm).unwrap();
         }
+    }
+
+    #[test]
+    fn pixel_mode_scales_the_canvas() {
+        let mut s = Screen::new(80, 25);
+        s.write_str("text underneath");
+        s.enter_pixels();
+        s.gfx(|p| {
+            p.fill(0, 0, 320, 200, 32 + 36 * 5); // pure red from the cube
+            p.pixel(319, 199, 15);
+            p.flip();
+        });
+        let ppm = screenshot_ppm(&s, true);
+        let body = &ppm[15..];
+        assert_eq!(&body[..3], &[255, 0, 0]);
+        // the last canvas pixel covers the last 2x2 texels
+        let last = (400 * 640 - 1) * 3;
+        assert_eq!(&body[last..last + 3], &[255, 255, 255]);
+        let prev_row = ((399 - 1) * 640 + 639) * 3;
+        assert_eq!(&body[prev_row..prev_row + 3], &[255, 255, 255]);
+        let before = (400 * 640 - 3) * 3;
+        assert_eq!(&body[before..before + 3], &[255, 0, 0]);
     }
 }

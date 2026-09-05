@@ -186,10 +186,18 @@ impl ApplicationHandler<()> for App {
                     self.kernel.push_text("\nparent\n");
                     return;
                 }
-                if let Some(k) = keys::map(&event, self.mods) {
-                    self.kernel.push_key(k);
+                if let Some(k) = keys::map_any(&event, self.mods) {
+                    if event.state.is_pressed() {
+                        self.kernel.push_key(k);
+                        if !event.repeat {
+                            self.kernel.push_key_event(k, true);
+                        }
+                    } else {
+                        self.kernel.push_key_event(k, false);
+                    }
                 }
             }
+            WindowEvent::Focused(false) => self.kernel.release_all_keys(),
             WindowEvent::RedrawRequested => {
                 let blink = self.blink_on();
                 if let Some(r) = &mut self.renderer {

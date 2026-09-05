@@ -96,7 +96,7 @@ fn build(p: &Arc<Proc>, interactive: bool) -> Result<Built, String> {
     } else {
         (builder.build().map_err(|e| e.to_string())?, None)
     };
-    ext::add_all(&mut machine, p.clone());
+    ext::add_all(&mut machine, p.clone(), console.clone());
     Ok(Built {
         machine,
         console,
@@ -121,6 +121,7 @@ pub fn run_source(p: &Proc, name: &str, src: &str) -> i32 {
         src
     };
     let result = futures_lite::future::block_on(built.machine.exec(&mut body.as_bytes()));
+    finish_gfx(p, matches!(result, Ok(StopReason::Eof) | Ok(StopReason::Exited(_))));
     p.set_color(kiddos_console::colors::DEFAULT_FG, kiddos_console::colors::DEFAULT_BG);
     p.cursor_show(true);
     if p.cursor_pos().0 != 0 {
@@ -139,6 +140,19 @@ pub fn run_source(p: &Proc, name: &str, src: &str) -> i32 {
             1
         }
     }
+}
+
+/// A program that ends in pixel mode leaves its picture up until a key is
+/// pressed, so a kid's first `GFX_CIRCLE` does not vanish at once. After a
+/// Break or an error the text comes straight back so the message is seen.
+fn finish_gfx(p: &Proc, wait: bool) {
+    if !p.gfx_on() {
+        return;
+    }
+    if wait {
+        let _ = p.readkey();
+    }
+    p.gfx_mode(false);
 }
 
 fn cmd_basic(p: &Proc, args: &[String]) -> CmdResult {
@@ -201,7 +215,9 @@ async fn repl(p: &Proc, machine: &mut Machine, console: Rc<RefCell<dyn EbConsole
                 if word.is_empty() {
                     continue;
                 }
-                match machine.exec(&mut line.as_bytes()).await {
+                let result = machine.exec(&mut line.as_bytes()).await;
+                finish_gfx(p, matches!(result, Ok(StopReason::Eof) | Ok(StopReason::Exited(_))));
+                match result {
                     Ok(StopReason::Break) => p.println(&format!("\x1b[33m{}\x1b[0m", p.t("program-stopped", &[]))),
                     Ok(_) => {}
                     Err(e) => p.println(&format!("\x1b[1;31m{}\x1b[0m", ext::humanize(&e.to_string()))),

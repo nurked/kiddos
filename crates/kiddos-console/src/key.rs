@@ -28,7 +28,24 @@ pub enum Key {
     Alt(char),
 }
 
+/// A key going down or up. Auto-repeat does not produce events.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct KeyEvent {
+    pub key: Key,
+    pub down: bool,
+}
+
 impl Key {
+    /// For `Char` keys, the same letter in the other case: a key released
+    /// after Shift went up must still clear the held state.
+    pub fn case_swapped(&self) -> Option<Key> {
+        match self {
+            Key::Char(c) if c.is_lowercase() => c.to_uppercase().next().map(Key::Char),
+            Key::Char(c) if c.is_uppercase() => c.to_lowercase().next().map(Key::Char),
+            _ => None,
+        }
+    }
+
     /// Parse a key name as used by headless scripts and docs:
     /// `enter`, `tab`, `up`, `ctrl-c`, `f1`, `esc`, `space`.
     pub fn parse_name(name: &str) -> Option<Key> {

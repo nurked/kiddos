@@ -4,12 +4,12 @@ use crate::host::{HostCaps, HostRequest, MachineConfig};
 use crate::proc::{CapSet, Proc};
 use crate::registry::{Command, Topic};
 use crate::stream::{Input, Output};
-use crate::{CmdResult, Console, ExitCode, Interrupted, Key, Screen, Vfs, VfsError, KID_HOME, KID_USER};
+use crate::{CmdResult, Console, ExitCode, Interrupted, Key, KeyEvent, Screen, Vfs, VfsError, KID_HOME, KID_USER};
 use kiddos_i18n::Lang;
 use kiddos_vfs::{Actor, Kind, X};
 use parking_lot::{Condvar, Mutex, RwLock};
 use std::any::{Any, TypeId};
-use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -165,6 +165,11 @@ pub struct Kernel {
     keys: Mutex<VecDeque<Key>>,
     key_cv: Condvar,
     key_waiters: AtomicUsize,
+    /// Keys physically down right now (pixel-mode games hold a direction).
+    held: Mutex<HashSet<Key>>,
+    /// Down/up events for programs that want them. Capped; cleared when a
+    /// program enters pixel mode so it does not see the shell's typing.
+    key_events: Mutex<VecDeque<KeyEvent>>,
     procs: Mutex<BTreeMap<Pid, ProcEntry>>,
     next_pid: AtomicU32,
     registry: RwLock<BTreeMap<String, Command>>,
@@ -183,6 +188,7 @@ pub struct Kernel {
 /// Where earned commands are remembered: one name per line, cat-able.
 pub const UNLOCKS_FILE: &str = "/home/kid/.unlocks";
 
+const KEY_EVENTS_MAX: usize = 256;
 const SPEAK_MIN_GAP_MS: u64 = 400;
 const SPEAK_MAX_CHARS: usize = 400;
 const BEEP_MAX_MS: u32 = 2000;
@@ -197,6 +203,8 @@ impl Kernel {
             keys: Mutex::new(VecDeque::new()),
             key_cv: Condvar::new(),
             key_waiters: AtomicUsize::new(0),
+            held: Mutex::new(HashSet::new()),
+            key_events: Mutex::new(VecDeque::new()),
             procs: Mutex::new(BTreeMap::new()),
             next_pid: AtomicU32::new(1),
             registry: RwLock::new(BTreeMap::new()),
@@ -333,6 +341,48 @@ impl Kernel {
                 c => self.push_key(Key::Char(c)),
             }
         }
+    }
+
+    /// A key went down (`down == true`, not an auto-repeat) or up. Presses
+    /// still go through [`Kernel::push_key`]; this only tracks state.
+    pub fn push_key_event(&self, key: Key, down: bool) {
+        {
+            let mut held = self.held.lock();
+            if down {
+                held.insert(key);
+            } else {
+                held.remove(&key);
+                if let Some(other) = key.case_swapped() {
+                    held.remove(&other);
+                }
+            }
+        }
+        let mut ev = self.key_events.lock();
+        if ev.len() >= KEY_EVENTS_MAX {
+            ev.pop_front();
+        }
+        ev.push_back(KeyEvent { key, down });
+    }
+
+    /// The window lost focus (or similar): nothing is held any more.
+    pub fn release_all_keys(&self) {
+        let keys: Vec<Key> = self.held.lock().drain().collect();
+        let mut ev = self.key_events.lock();
+        for key in keys {
+            ev.push_back(KeyEvent { key, down: false });
+        }
+    }
+
+    pub fn key_held(&self, key: Key) -> bool {
+        self.held.lock().contains(&key)
+    }
+
+    pub fn next_key_event(&self) -> Option<KeyEvent> {
+        self.key_events.lock().pop_front()
+    }
+
+    pub fn clear_key_events(&self) {
+        self.key_events.lock().clear();
     }
 
     pub fn keys_pending(&self) -> usize {

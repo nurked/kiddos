@@ -2,6 +2,7 @@
 //! redraws when it changed.
 
 use crate::color::colors;
+use crate::pixels::Pixels;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Cell {
@@ -40,6 +41,9 @@ pub struct Screen {
     bells: u32,
     ansi: Ansi,
     csi_buf: String,
+    /// Pixel mode, when a program turned it on. The cells stay intact
+    /// underneath and come back when it is turned off.
+    pixels: Option<Box<Pixels>>,
     /// Set by programs that draw the whole screen themselves; the shell uses
     /// it to know whether to reset colors when a program exits.
     pub title: String,
@@ -62,6 +66,7 @@ impl Screen {
             bells: 0,
             ansi: Ansi::Ground,
             csi_buf: String::new(),
+            pixels: None,
             title: String::new(),
         }
     }
@@ -105,6 +110,43 @@ impl Screen {
 
     fn touch(&mut self) {
         self.generation = self.generation.wrapping_add(1);
+    }
+
+    // ---- pixel mode ----------------------------------------------------
+
+    pub fn pixel_mode(&self) -> bool {
+        self.pixels.is_some()
+    }
+
+    /// Turn pixel mode on with a black canvas. No-op if already on.
+    pub fn enter_pixels(&mut self) {
+        if self.pixels.is_none() {
+            self.pixels = Some(Box::default());
+            self.touch();
+        }
+    }
+
+    /// Back to text: the cells reappear as they were.
+    pub fn leave_pixels(&mut self) {
+        if self.pixels.take().is_some() {
+            self.touch();
+        }
+    }
+
+    pub fn pixels(&self) -> Option<&Pixels> {
+        self.pixels.as_deref()
+    }
+
+    /// Draw on the canvas. Returns `None` when not in pixel mode. Visible
+    /// changes (a flip, a palette change) advance the screen generation.
+    pub fn gfx<R>(&mut self, f: impl FnOnce(&mut Pixels) -> R) -> Option<R> {
+        let px = self.pixels.as_deref_mut()?;
+        let before = px.generation();
+        let r = f(px);
+        if px.generation() != before {
+            self.touch();
+        }
+        Some(r)
     }
 
     pub fn set_cursor(&mut self, x: u16, y: u16) {
@@ -389,6 +431,26 @@ mod tests {
         assert_eq!(s.cell(3, 2).ch, 'y');
         s.write_str("\x1b[?25l");
         assert!(!s.cursor_visible());
+    }
+
+    #[test]
+    fn pixel_mode_keeps_text_underneath() {
+        let mut s = Screen::new(20, 3);
+        s.write_str("hello");
+        let g = s.generation();
+        s.enter_pixels();
+        assert!(s.pixel_mode());
+        assert!(s.generation() > g);
+        let g = s.generation();
+        s.gfx(|p| p.pixel(1, 1, 5));
+        assert_eq!(s.generation(), g, "drawing to the back buffer is invisible");
+        s.gfx(|p| p.flip());
+        assert!(s.generation() > g);
+        assert_eq!(s.pixels().unwrap().front()[321], 5);
+        s.leave_pixels();
+        assert!(!s.pixel_mode());
+        assert_eq!(s.line(0), "hello");
+        assert!(s.gfx(|p| p.flip()).is_none());
     }
 
     #[test]

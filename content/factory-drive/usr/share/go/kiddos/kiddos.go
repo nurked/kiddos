@@ -73,6 +73,51 @@ func fsReadRaw(path unsafe.Pointer, plen int32, buf unsafe.Pointer, cap int32) i
 //go:wasmimport kiddos fs_write
 func fsWriteRaw(path unsafe.Pointer, plen int32, data unsafe.Pointer, dlen int32, append int32) int32
 
+//go:wasmimport kiddos gfx_mode
+func gfxModeRaw(on int32)
+
+//go:wasmimport kiddos gfx_clear
+func gfxClearRaw(color int32)
+
+//go:wasmimport kiddos gfx_pixel
+func gfxPixelRaw(x, y, color int32)
+
+//go:wasmimport kiddos gfx_get
+func gfxGetRaw(x, y int32) int32
+
+//go:wasmimport kiddos gfx_line
+func gfxLineRaw(x1, y1, x2, y2, color int32)
+
+//go:wasmimport kiddos gfx_rect
+func gfxRectRaw(x, y, w, h, color int32)
+
+//go:wasmimport kiddos gfx_fill
+func gfxFillRaw(x, y, w, h, color int32)
+
+//go:wasmimport kiddos gfx_circle
+func gfxCircleRaw(x, y, r, color, filled int32)
+
+//go:wasmimport kiddos gfx_blit
+func gfxBlitRaw(x, y, w, h int32, pixels unsafe.Pointer, transparent int32)
+
+//go:wasmimport kiddos gfx_read
+func gfxReadRaw(x, y, w, h int32, out unsafe.Pointer) int32
+
+//go:wasmimport kiddos gfx_palette
+func gfxPaletteRaw(index, r, g, b int32)
+
+//go:wasmimport kiddos gfx_text
+func gfxTextRaw(x, y int32, s unsafe.Pointer, n int32, fg, bg int32) int32
+
+//go:wasmimport kiddos gfx_flip
+func gfxFlipRaw()
+
+//go:wasmimport kiddos key_down
+func keyDownRaw(key int32) int32
+
+//go:wasmimport kiddos key_event
+func keyEventRaw() int32
+
 // Keys, as returned by GetKey and ReadKey. Letters come back as themselves.
 const (
 	KeyEnter = 0x110001
@@ -206,3 +251,72 @@ func AppendFile(path, data string) bool {
 	d, dn := strPtr(data)
 	return fsWriteRaw(p, n, d, dn, 1) == 0
 }
+
+// Pixel mode: 320 x 200 pixels, 256 colors, double-buffered.
+//
+// GfxMode(true) switches the screen to pixels (the text stays underneath
+// and comes back with GfxMode(false) or when the program ends). Drawing
+// goes to a hidden buffer; GfxFlip shows it. Colors are palette numbers:
+// 0-15 the usual colors, 16-31 grays, 32-247 a color cube (see RGB), and
+// GfxPalette can change any entry.
+const (
+	GfxW = 320
+	GfxH = 200
+	// KeyEvent sets this bit when the key went up rather than down.
+	KeyReleased = 0x1000000
+)
+
+// RGB gives the palette number for red, green and blue levels 0..5.
+func RGB(r, g, b int) int { return 32 + 36*r + 6*g + b }
+
+// Gray gives the palette number for a gray level 0..15.
+func Gray(v int) int { return 16 + v }
+
+func GfxMode(on bool)                       { if on { gfxModeRaw(1) } else { gfxModeRaw(0) } }
+func GfxClear(color int)                    { gfxClearRaw(int32(color)) }
+func GfxPixel(x, y, color int)              { gfxPixelRaw(int32(x), int32(y), int32(color)) }
+func GfxGet(x, y int) int                   { return int(gfxGetRaw(int32(x), int32(y))) }
+func GfxLine(x1, y1, x2, y2, color int)     { gfxLineRaw(int32(x1), int32(y1), int32(x2), int32(y2), int32(color)) }
+func GfxRect(x, y, w, h, color int)         { gfxRectRaw(int32(x), int32(y), int32(w), int32(h), int32(color)) }
+func GfxFill(x, y, w, h, color int)         { gfxFillRaw(int32(x), int32(y), int32(w), int32(h), int32(color)) }
+func GfxCircle(x, y, r, color int, filled bool) {
+	f := int32(0)
+	if filled {
+		f = 1
+	}
+	gfxCircleRaw(int32(x), int32(y), int32(r), int32(color), f)
+}
+func GfxPalette(index, r, g, b int) { gfxPaletteRaw(int32(index), int32(r), int32(g), int32(b)) }
+func GfxFlip()                      { gfxFlipRaw() }
+
+// GfxBlit copies a w x h block of palette numbers (w per row) to x, y.
+// Pixels equal to transparent are skipped; pass -1 to copy everything.
+func GfxBlit(x, y, w, h int, pixels []byte, transparent int) {
+	if len(pixels) == 0 {
+		return
+	}
+	gfxBlitRaw(int32(x), int32(y), int32(w), int32(h), unsafe.Pointer(&pixels[0]), int32(transparent))
+}
+
+// GfxRead copies a w x h block out of the drawing buffer.
+func GfxRead(x, y, w, h int) []byte {
+	if w <= 0 || h <= 0 {
+		return nil
+	}
+	out := make([]byte, w*h)
+	gfxReadRaw(int32(x), int32(y), int32(w), int32(h), unsafe.Pointer(&out[0]))
+	return out
+}
+
+// GfxText draws s with the 8x8 font; bg -1 keeps the background. Returns
+// the x after the last letter.
+func GfxText(x, y int, s string, fg, bg int) int {
+	p, n := strPtr(s)
+	return int(gfxTextRaw(int32(x), int32(y), p, n, int32(fg), int32(bg)))
+}
+
+// KeyDown reports whether a key is held right now (games hold a direction).
+func KeyDown(key int) bool { return keyDownRaw(int32(key)) != 0 }
+
+// KeyEvent returns the next key down or up (KeyReleased bit set), or -1.
+func KeyEvent() int { return int(keyEventRaw()) }

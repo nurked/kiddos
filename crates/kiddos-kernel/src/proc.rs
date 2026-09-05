@@ -3,7 +3,7 @@
 use crate::fs::Fs;
 use crate::kernel::{Child, Kernel, Pid, ProcState, Spawn, SpawnError};
 use crate::stream::{Input, Output};
-use crate::{Console, Interrupted, Key, KID_HOME, ROOT_HOME};
+use crate::{Console, Interrupted, Key, KeyEvent, Pixels, Rgb, KID_HOME, ROOT_HOME};
 use kiddos_i18n::Lang;
 use kiddos_vfs::{Actor, VfsError};
 use parking_lot::Mutex;
@@ -46,6 +46,8 @@ pub struct Proc {
     stdout: Output,
     stderr: Output,
     killed: Arc<AtomicBool>,
+    /// This process turned pixel mode on; it goes off when the process ends.
+    gfx_owner: AtomicBool,
     self_weak: OnceLock<Weak<Proc>>,
 }
 
@@ -67,6 +69,7 @@ impl Proc {
             stdout: s.stdout,
             stderr: s.stderr,
             killed,
+            gfx_owner: AtomicBool::new(false),
             self_weak: OnceLock::new(),
         }
     }
@@ -153,6 +156,19 @@ impl Proc {
     /// See [`Kernel::take_key_if`].
     pub fn take_key_if(&self, pred: impl Fn(&Key) -> bool) -> Option<Key> {
         self.kernel.take_key_if(pred)
+    }
+
+    /// Pixel mode, switched on if it was off: every drawing call does this,
+    /// so a program's first `gfx_pixel` just works. Returns the locked
+    /// screen for the drawing itself.
+    fn ensure_gfx(&self) -> parking_lot::MutexGuard<'_, crate::Screen> {
+        let mut screen = self.kernel.screen.lock();
+        if !screen.pixel_mode() {
+            screen.enter_pixels();
+            self.kernel.clear_key_events();
+        }
+        self.gfx_owner.store(true, Ordering::SeqCst);
+        screen
     }
 
     pub fn killed(&self) -> bool {
@@ -245,8 +261,12 @@ impl Proc {
         self.write_to(&self.stderr, data);
     }
 
-    /// Called by the kernel when the process ends: flush the speaker.
+    /// Called by the kernel when the process ends: flush the speaker, and
+    /// bring the text screen back if this process was drawing pixels.
     pub(crate) fn close(&self) {
+        if self.gfx_owner.swap(false, Ordering::SeqCst) {
+            self.kernel.screen.lock().leave_pixels();
+        }
         if let Output::Speaker(buf) = &self.stdout {
             let rest = std::mem::take(&mut *buf.lock());
             if !rest.trim().is_empty() {
@@ -448,5 +468,68 @@ impl Console for Proc {
     }
     fn stdin_is_tty(&self) -> bool {
         self.stdin.is_tty()
+    }
+
+    fn gfx_mode(&self, on: bool) {
+        if on {
+            drop(self.ensure_gfx());
+        } else {
+            self.kernel.screen.lock().leave_pixels();
+            self.gfx_owner.store(false, Ordering::SeqCst);
+        }
+    }
+    fn gfx_on(&self) -> bool {
+        self.kernel.screen.lock().pixel_mode()
+    }
+    fn gfx_clear(&self, c: u8) {
+        self.ensure_gfx().gfx(|p| p.clear(c));
+    }
+    fn gfx_pixel(&self, x: i32, y: i32, c: u8) {
+        self.ensure_gfx().gfx(|p| p.pixel(x, y, c));
+    }
+    fn gfx_get(&self, x: i32, y: i32) -> u8 {
+        self.kernel.screen.lock().pixels().map(|p| p.get(x, y)).unwrap_or(0)
+    }
+    fn gfx_line(&self, x1: i32, y1: i32, x2: i32, y2: i32, c: u8) {
+        self.ensure_gfx().gfx(|p| p.line(x1, y1, x2, y2, c));
+    }
+    fn gfx_rect(&self, x: i32, y: i32, w: i32, h: i32, c: u8) {
+        self.ensure_gfx().gfx(|p| p.rect(x, y, w, h, c));
+    }
+    fn gfx_fill(&self, x: i32, y: i32, w: i32, h: i32, c: u8) {
+        self.ensure_gfx().gfx(|p| p.fill(x, y, w, h, c));
+    }
+    fn gfx_circle(&self, cx: i32, cy: i32, r: i32, c: u8, filled: bool) {
+        self.ensure_gfx().gfx(|p| p.circle(cx, cy, r, c, filled));
+    }
+    fn gfx_blit(&self, x: i32, y: i32, w: i32, h: i32, data: &[u8], transparent: Option<u8>) {
+        self.ensure_gfx().gfx(|p| p.blit(x, y, w, h, data, transparent));
+    }
+    fn gfx_read(&self, x: i32, y: i32, w: i32, h: i32) -> Vec<u8> {
+        self.kernel
+            .screen
+            .lock()
+            .pixels()
+            .map(|p| p.read(x, y, w, h))
+            .unwrap_or_default()
+    }
+    fn gfx_palette(&self, i: u8, rgb: Rgb) {
+        self.ensure_gfx().gfx(|p| p.set_palette(i, rgb));
+    }
+    fn gfx_text(&self, x: i32, y: i32, s: &str, fg: u8, bg: Option<u8>) -> i32 {
+        self.ensure_gfx()
+            .gfx(|p| p.text(x, y, s, fg, bg))
+            .unwrap_or(x + Pixels::text_width(s))
+    }
+    fn gfx_flip(&self) {
+        self.ensure_gfx().gfx(|p| p.flip());
+        // a program that flips in a tight loop still lets the renderer run
+        std::thread::yield_now();
+    }
+    fn key_held(&self, k: Key) -> bool {
+        self.kernel.key_held(k)
+    }
+    fn key_event(&self) -> Option<KeyEvent> {
+        self.kernel.next_key_event()
     }
 }

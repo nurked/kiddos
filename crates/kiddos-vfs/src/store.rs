@@ -283,7 +283,7 @@ mod tests {
         assert_eq!(v.stat("/tmp").unwrap().mode, 0o777);
         assert!(!v.exists("/home/kid/.DS_Store"));
         assert!(v.write("/games/snake/x", b"", &kid).is_err());
-        assert!(v.write("/home/kid/x", b"", &kid).is_ok() || true);
+        assert!(v.write("/home/kid/x", b"", &kid).is_ok());
         #[cfg(unix)]
         {
             assert_eq!(v.readlink("/home/kid/games").unwrap(), "/games");

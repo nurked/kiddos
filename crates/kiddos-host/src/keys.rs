@@ -21,6 +21,12 @@ pub fn map(event: &KeyEvent, mods: ModifiersState) -> Option<Key> {
     if event.state != ElementState::Pressed {
         return None;
     }
+    map_any(event, mods)
+}
+
+/// Like [`map`] but for releases as well, so the kernel can track which
+/// keys are held.
+pub fn map_any(event: &KeyEvent, mods: ModifiersState) -> Option<Key> {
     let ctrl = mods.control_key();
     let alt = mods.alt_key();
     if let WKey::Named(n) = &event.logical_key {

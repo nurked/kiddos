@@ -65,6 +65,24 @@ impl Machine {
         self.settle();
     }
 
+    /// Press a key and keep it down (a press also reaches `readkey`).
+    pub fn key_down(&self, k: Key) {
+        self.kernel.push_key(k);
+        self.kernel.push_key_event(k, true);
+        self.settle();
+    }
+
+    pub fn key_up(&self, k: Key) {
+        self.kernel.push_key_event(k, false);
+        self.settle();
+    }
+
+    /// The pixel canvas, if a program is in pixel mode: a snapshot of the
+    /// visible (front) buffer and the palette.
+    pub fn pixels(&self) -> Option<kiddos_console::Pixels> {
+        self.kernel.screen.lock().pixels().cloned()
+    }
+
     /// Type text (no Enter) and wait.
     pub fn type_text(&self, s: &str) {
         self.kernel.push_text(s);

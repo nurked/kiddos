@@ -5,7 +5,7 @@
 //! named keys, `0x120000 + letter` for Ctrl, `0x130000 + letter` for Alt.
 //! `/usr/include/kiddos.h` mirrors these numbers.
 
-use kiddos_kernel::{Console, Key, Proc};
+use kiddos_kernel::{Console, Key, KeyEvent, Proc};
 use std::sync::Arc;
 use wasmtime::{Caller, Linker};
 
@@ -67,6 +67,55 @@ pub fn keycode(k: Key) -> i32 {
         Key::Ctrl(c) => KEY_CTRL + c as i32,
         Key::Alt(c) => KEY_ALT + c as i32,
     }
+}
+
+/// A key event as one integer: the key code, plus this bit when released.
+pub const KEY_UP_BIT: i32 = 0x100_0000;
+
+pub fn eventcode(e: KeyEvent) -> i32 {
+    keycode(e.key) | if e.down { 0 } else { KEY_UP_BIT }
+}
+
+/// The inverse of [`keycode`], for `key_down(code)`.
+pub fn key_from_code(code: i32) -> Option<Key> {
+    Some(match code {
+        c if (0..KEY_NAMED).contains(&c) => Key::Char(char::from_u32(c as u32)?),
+        c if (KEY_CTRL..KEY_ALT).contains(&c) => Key::Ctrl(char::from_u32((c - KEY_CTRL) as u32)?),
+        c if (KEY_ALT..KEY_ALT + 0x10000).contains(&c) => Key::Alt(char::from_u32((c - KEY_ALT) as u32)?),
+        c => match c - KEY_NAMED {
+            1 => Key::Enter,
+            2 => Key::Backspace,
+            3 => Key::Tab,
+            4 => Key::Escape,
+            5 => Key::Up,
+            6 => Key::Down,
+            7 => Key::Left,
+            8 => Key::Right,
+            9 => Key::Home,
+            10 => Key::End,
+            11 => Key::PageUp,
+            12 => Key::PageDown,
+            13 => Key::Insert,
+            14 => Key::Delete,
+            15 => Key::BackTab,
+            n if (21..=32).contains(&n) => Key::F((n - 20) as u8),
+            _ => return None,
+        },
+    })
+}
+
+fn read_bytes(caller: &mut Caller<'_, State>, ptr: i32, len: i32) -> anyhow::Result<Vec<u8>> {
+    let mem = caller
+        .get_export("memory")
+        .and_then(|e| e.into_memory())
+        .ok_or_else(|| anyhow::anyhow!("The program has no memory export."))?;
+    let (start, len) = (ptr.max(0) as usize, len.max(0) as usize);
+    let data = mem.data(&*caller);
+    let end = start
+        .checked_add(len)
+        .filter(|e| *e <= data.len())
+        .ok_or(wasmtime::Trap::MemoryOutOfBounds)?;
+    Ok(data[start..end].to_vec())
 }
 
 fn read_str(caller: &mut Caller<'_, State>, ptr: i32, len: i32) -> anyhow::Result<String> {
@@ -211,5 +260,132 @@ pub fn link(l: &mut Linker<State>) -> anyhow::Result<()> {
             Ok(if r.is_ok() { 0 } else { -1 })
         },
     )?;
+
+    // ---- pixel mode (API v2) ------------------------------------------
+    l.func_wrap(m, "gfx_mode", |c: Caller<'_, State>, on: i32| {
+        c.data().proc.gfx_mode(on != 0);
+    })?;
+    l.func_wrap(m, "gfx_clear", |c: Caller<'_, State>, color: i32| {
+        c.data().proc.gfx_clear(color as u8);
+    })?;
+    l.func_wrap(m, "gfx_pixel", |c: Caller<'_, State>, x: i32, y: i32, color: i32| {
+        c.data().proc.gfx_pixel(x, y, color as u8);
+    })?;
+    l.func_wrap(m, "gfx_get", |c: Caller<'_, State>, x: i32, y: i32| -> i32 {
+        c.data().proc.gfx_get(x, y) as i32
+    })?;
+    l.func_wrap(
+        m,
+        "gfx_line",
+        |c: Caller<'_, State>, x1: i32, y1: i32, x2: i32, y2: i32, color: i32| {
+            c.data().proc.gfx_line(x1, y1, x2, y2, color as u8);
+        },
+    )?;
+    l.func_wrap(
+        m,
+        "gfx_rect",
+        |c: Caller<'_, State>, x: i32, y: i32, w: i32, h: i32, color: i32| {
+            c.data().proc.gfx_rect(x, y, w, h, color as u8);
+        },
+    )?;
+    l.func_wrap(
+        m,
+        "gfx_fill",
+        |c: Caller<'_, State>, x: i32, y: i32, w: i32, h: i32, color: i32| {
+            c.data().proc.gfx_fill(x, y, w, h, color as u8);
+        },
+    )?;
+    l.func_wrap(
+        m,
+        "gfx_circle",
+        |c: Caller<'_, State>, x: i32, y: i32, r: i32, color: i32, filled: i32| {
+            c.data().proc.gfx_circle(x, y, r, color as u8, filled != 0);
+        },
+    )?;
+    l.func_wrap(
+        m,
+        "gfx_blit",
+        |mut c: Caller<'_, State>, x: i32, y: i32, w: i32, h: i32, ptr: i32, transparent: i32| -> anyhow::Result<()> {
+            let (w, h) = (w.clamp(0, 4096), h.clamp(0, 4096));
+            let data = read_bytes(&mut c, ptr, w * h)?;
+            let t = if (0..256).contains(&transparent) {
+                Some(transparent as u8)
+            } else {
+                None
+            };
+            c.data().proc.gfx_blit(x, y, w, h, &data, t);
+            Ok(())
+        },
+    )?;
+    l.func_wrap(
+        m,
+        "gfx_read",
+        |mut c: Caller<'_, State>, x: i32, y: i32, w: i32, h: i32, ptr: i32| -> anyhow::Result<i32> {
+            let (w, h) = (w.clamp(0, 4096), h.clamp(0, 4096));
+            let data = c.data().proc.gfx_read(x, y, w, h);
+            write_bytes(&mut c, ptr, w * h, &data)
+        },
+    )?;
+    l.func_wrap(
+        m,
+        "gfx_palette",
+        |c: Caller<'_, State>, i: i32, r: i32, g: i32, b: i32| {
+            c.data().proc.gfx_palette(
+                i as u8,
+                [r.clamp(0, 255) as u8, g.clamp(0, 255) as u8, b.clamp(0, 255) as u8],
+            );
+        },
+    )?;
+    l.func_wrap(
+        m,
+        "gfx_text",
+        |mut c: Caller<'_, State>, x: i32, y: i32, ptr: i32, len: i32, fg: i32, bg: i32| -> anyhow::Result<i32> {
+            let s = read_str(&mut c, ptr, len)?;
+            let bg = if (0..256).contains(&bg) { Some(bg as u8) } else { None };
+            Ok(c.data().proc.gfx_text(x, y, &s, fg as u8, bg))
+        },
+    )?;
+    l.func_wrap(m, "gfx_flip", |c: Caller<'_, State>| {
+        c.data().proc.gfx_flip();
+    })?;
+
+    // ---- key state (API v2) --------------------------------------------
+    l.func_wrap(m, "key_down", |c: Caller<'_, State>, code: i32| -> i32 {
+        key_from_code(code).map(|k| c.data().proc.key_held(k)).unwrap_or(false) as i32
+    })?;
+    l.func_wrap(m, "key_event", |c: Caller<'_, State>| -> i32 {
+        c.data().proc.key_event().map(eventcode).unwrap_or(-1)
+    })?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn key_codes_round_trip() {
+        for k in [
+            Key::Char('a'),
+            Key::Char('Ж'),
+            Key::Enter,
+            Key::Escape,
+            Key::Left,
+            Key::BackTab,
+            Key::F(1),
+            Key::F(12),
+            Key::Ctrl('c'),
+            Key::Alt('x'),
+        ] {
+            assert_eq!(key_from_code(keycode(k)), Some(k), "{k:?}");
+        }
+        assert_eq!(key_from_code(-1), None);
+        assert_eq!(
+            eventcode(KeyEvent {
+                key: Key::Up,
+                down: false
+            }),
+            keycode(Key::Up) | KEY_UP_BIT
+        );
+    }
 }

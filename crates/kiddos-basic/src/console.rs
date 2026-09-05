@@ -1,9 +1,15 @@
 //! EndBASIC's `Console` on top of a KidDOS process.
+//!
+//! Graphics: EndBASIC's `GFX_*` statements call the `draw_*` methods with
+//! the current foreground color. The first one switches the screen to
+//! pixel mode (QBasic's `SCREEN 13` does the same explicitly). With video
+//! sync on (the default) every drawing call is shown at once; `GFX_SYNC
+//! FALSE` buffers until `GFX_SYNC` or `GFX_FLIP`.
 
 use async_channel::Sender;
 use async_trait::async_trait;
 use endbasic_core::exec::Signal;
-use endbasic_std::console::{CharsXY, ClearType, Console as EbConsole, Key as EbKey};
+use endbasic_std::console::{CharsXY, ClearType, Console as EbConsole, Key as EbKey, PixelsXY, SizeInPixels};
 use kiddos_console::{colors, Key, Screen};
 use kiddos_kernel::{Console, Proc};
 use std::io;
@@ -15,6 +21,7 @@ pub struct KidConsole {
     saved: Option<Screen>,
     fg: Option<u8>,
     bg: Option<u8>,
+    sync: bool,
 }
 
 impl KidConsole {
@@ -25,7 +32,25 @@ impl KidConsole {
             saved: None,
             fg: None,
             bg: None,
+            sync: true,
         }
+    }
+
+    /// The color drawing uses: the full 0-255 palette, unlike text.
+    fn draw_color(&self) -> u8 {
+        self.fg.unwrap_or(colors::DEFAULT_FG)
+    }
+
+    /// Enter pixel mode if needed, draw, and show it when syncing.
+    fn draw(&mut self, f: impl FnOnce(&Proc, u8)) -> io::Result<()> {
+        if !self.p.gfx_on() {
+            self.p.gfx_mode(true);
+        }
+        f(&self.p, self.draw_color());
+        if self.sync {
+            self.p.gfx_flip();
+        }
+        Ok(())
     }
 
     fn map_key(&self, k: Key) -> EbKey {
@@ -68,7 +93,13 @@ impl EbConsole for KidConsole {
         let (x, y) = self.p.cursor_pos();
         let (fg, bg) = (to_cga(self.fg, colors::DEFAULT_FG), to_cga(self.bg, colors::DEFAULT_BG));
         match how {
-            ClearType::All => self.p.clear(bg),
+            ClearType::All => {
+                self.p.clear(bg);
+                if self.p.gfx_on() {
+                    self.p.gfx_clear(self.bg.unwrap_or(0));
+                    self.p.gfx_flip();
+                }
+            }
             ClearType::CurrentLine => {
                 for cx in 0..cols {
                     self.p.put(cx, y, ' ', fg, bg);
@@ -174,11 +205,59 @@ impl EbConsole for KidConsole {
         Ok(CharsXY { x: cols, y: rows })
     }
 
+    fn size_pixels(&self) -> io::Result<SizeInPixels> {
+        Ok(SizeInPixels::new(
+            kiddos_console::pixels::WIDTH,
+            kiddos_console::pixels::HEIGHT,
+        ))
+    }
+
+    fn draw_circle(&mut self, center: PixelsXY, radius: u16) -> io::Result<()> {
+        self.draw(|p, c| p.gfx_circle(center.x as i32, center.y as i32, radius as i32, c, false))
+    }
+
+    fn draw_circle_filled(&mut self, center: PixelsXY, radius: u16) -> io::Result<()> {
+        self.draw(|p, c| p.gfx_circle(center.x as i32, center.y as i32, radius as i32, c, true))
+    }
+
+    fn draw_line(&mut self, a: PixelsXY, b: PixelsXY) -> io::Result<()> {
+        self.draw(|p, c| p.gfx_line(a.x as i32, a.y as i32, b.x as i32, b.y as i32, c))
+    }
+
+    fn draw_pixel(&mut self, xy: PixelsXY) -> io::Result<()> {
+        self.draw(|p, c| p.gfx_pixel(xy.x as i32, xy.y as i32, c))
+    }
+
+    fn draw_rect(&mut self, a: PixelsXY, b: PixelsXY) -> io::Result<()> {
+        let (x, y, w, h) = corners(a, b);
+        self.draw(|p, c| p.gfx_rect(x, y, w, h, c))
+    }
+
+    fn draw_rect_filled(&mut self, a: PixelsXY, b: PixelsXY) -> io::Result<()> {
+        let (x, y, w, h) = corners(a, b);
+        self.draw(|p, c| p.gfx_fill(x, y, w, h, c))
+    }
+
     fn sync_now(&mut self) -> io::Result<()> {
+        if self.p.gfx_on() {
+            self.p.gfx_flip();
+        }
         Ok(())
     }
 
-    fn set_sync(&mut self, _enabled: bool) -> io::Result<bool> {
-        Ok(true)
+    fn set_sync(&mut self, enabled: bool) -> io::Result<bool> {
+        let was = self.sync;
+        self.sync = enabled;
+        if enabled {
+            self.sync_now()?;
+        }
+        Ok(was)
     }
+}
+
+/// Two corners (either order, both included) to `(x, y, w, h)`.
+fn corners(a: PixelsXY, b: PixelsXY) -> (i32, i32, i32, i32) {
+    let (x1, x2) = (a.x.min(b.x) as i32, a.x.max(b.x) as i32);
+    let (y1, y2) = (a.y.min(b.y) as i32, a.y.max(b.y) as i32);
+    (x1, y1, x2 - x1 + 1, y2 - y1 + 1)
 }

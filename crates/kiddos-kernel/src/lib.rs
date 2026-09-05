@@ -16,7 +16,7 @@ pub mod stream;
 pub use fs::Fs;
 pub use host::{HostCaps, HostRequest, MachineConfig, NullHost};
 pub use kernel::{Child, Event, Kernel, Pid, ProcInfo, ProcState, Spawn, SpawnError};
-pub use kiddos_console::{Console, Interrupted, Key, Screen};
+pub use kiddos_console::{Console, Interrupted, Key, KeyEvent, Pixels, Rgb, Screen};
 pub use kiddos_i18n::Lang;
 pub use kiddos_vfs::{Actor, Stat, Vfs, VfsError};
 pub use proc::{CapSet, Proc};

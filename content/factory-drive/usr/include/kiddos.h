@@ -36,6 +36,37 @@ KD_IMPORT("exit")        void kd_exit(int code);
 KD_IMPORT("fs_read")     int  kd_fs_read_n(const char *path, int plen, char *buf, int cap);
 KD_IMPORT("fs_write")    int  kd_fs_write_n(const char *path, int plen, const char *data, int dlen, int append);
 
+/* --- pixel mode: 320 x 200, 256 colors, double-buffered ----------------- */
+/* kd_gfx_mode(1) switches the screen to pixels (the text stays underneath  */
+/* and comes back with kd_gfx_mode(0) or when the program ends). Drawing    */
+/* goes to a hidden buffer; kd_gfx_flip() shows it. Colors are palette      */
+/* numbers: 0-15 the usual colors, 16-31 grays, 32-247 a 6x6x6 color cube  */
+/* (KD_RGB below), and you can change any entry with kd_gfx_palette.        */
+KD_IMPORT("gfx_mode")    void kd_gfx_mode(int on);
+KD_IMPORT("gfx_clear")   void kd_gfx_clear(int color);
+KD_IMPORT("gfx_pixel")   void kd_gfx_pixel(int x, int y, int color);
+KD_IMPORT("gfx_get")     int  kd_gfx_get(int x, int y);
+KD_IMPORT("gfx_line")    void kd_gfx_line(int x1, int y1, int x2, int y2, int color);
+KD_IMPORT("gfx_rect")    void kd_gfx_rect(int x, int y, int w, int h, int color);   /* outline */
+KD_IMPORT("gfx_fill")    void kd_gfx_fill(int x, int y, int w, int h, int color);   /* filled  */
+KD_IMPORT("gfx_circle")  void kd_gfx_circle(int x, int y, int r, int color, int filled);
+KD_IMPORT("gfx_blit")    void kd_gfx_blit(int x, int y, int w, int h, const unsigned char *pixels, int transparent); /* transparent: a color, or -1 */
+KD_IMPORT("gfx_read")    int  kd_gfx_read(int x, int y, int w, int h, unsigned char *out);
+KD_IMPORT("gfx_palette") void kd_gfx_palette(int index, int r, int g, int b);
+KD_IMPORT("gfx_text")    int  kd_gfx_text_n(int x, int y, const char *s, int len, int fg, int bg); /* bg -1 = see-through */
+KD_IMPORT("gfx_flip")    void kd_gfx_flip(void);
+KD_IMPORT("key_down")    int  kd_key_down(int key);          /* 1 while the key is held */
+KD_IMPORT("key_event")   int  kd_key_event(void);            /* next key down/up, or -1 */
+
+#define KD_GFX_W 320
+#define KD_GFX_H 200
+/* a palette number from red, green, blue levels 0..5 */
+#define KD_RGB(r, g, b) (32 + 36 * (r) + 6 * (g) + (b))
+/* a palette number from a gray level 0..15 */
+#define KD_GRAY(v) (16 + (v))
+/* kd_key_event() sets this bit when the key went up rather than down */
+#define KD_KEY_RELEASED 0x1000000
+
 /* --- keys, as returned by kd_getkey / kd_readkey ------------------------ */
 /* Letters and symbols come back as themselves: 'a', ' ', '7'. Others:    */
 #define KD_KEY_ENTER   0x110001
@@ -82,6 +113,9 @@ static inline int kd_readline(char *buf, int cap) {
     int n = kd_readline_n(buf, cap - 1);
     if (n < 0) { buf[0] = 0; return 0; }
     buf[n] = 0; return 1;
+}
+static inline int kd_gfx_text(int x, int y, const char *s, int fg, int bg) {
+    return kd_gfx_text_n(x, y, s, kd_strlen(s), fg, bg);
 }
 static inline int kd_fs_read(const char *path, char *buf, int cap) {
     return kd_fs_read_n(path, kd_strlen(path), buf, cap);
