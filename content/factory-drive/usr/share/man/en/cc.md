@@ -26,5 +26,6 @@ wasm, basic, edit, gfx
 ## GROWN-UP NOTE
 There is no libc: `kiddos.h` is the whole API. The compiler is a real
 clang with a wasm32 target, installed by a parent as the "C pack"; until
-then `cc` says so. Programs run in wasmtime with no WASI, a 16 MB memory
+then `cc` says so. Programs run in wasmtime with a WASI subset that only
+reaches the virtual drive, a 16 MB memory
 cap, and Ctrl-C works even in a tight loop.

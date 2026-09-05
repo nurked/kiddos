@@ -8,13 +8,15 @@ BASIC, a WASM sandbox for C/Go/Pascal, and game cartridges. There is no
 internet, no host filesystem, no mouse. A child types `hi` and the machine
 talks back.
 
-Status: **Phase 5 in progress** (pixel mode is in: 320x200 in 256 colors
-from BASIC, C and Go, and a paint cartridge; Doom is next). A kid can boot, explore, make files, read the manual, follow twelve
+Status: **v0.6, end of Phase 5** (foundations, tutor, BASIC, the WASM
+sandbox with C and Go, vi earned by playing, pixel mode with paint and
+Doom). Next is Phase 6, ARM assembly and debug tools. A kid can boot, explore, make files, read the manual, follow twelve
 lessons with a tutor that watches the shell, write with `edit`, program in
 BASIC, draw pictures with `SCREEN 13` and the `GFX_` words, play eight
 cartridges (a cave adventure whose rooms are folders, and guess, snake,
 hangman, typing, tetris, sokoban and paint in BASIC that the kid can read,
-copy and change, plus a roguelike in C), share games as `.kdc` files,
+copy and change, plus a roguelike in C, and Doom itself as a cartridge a
+parent installs), share games as `.kdc` files,
 and, with the C or Go pack installed by a parent, write C with `cc` or Go
 with `goc` and run it in a sandbox. `vi` is on the machine but locked:
 Prison Escape teaches `:q!`, and finishing vi-quest earns the editor. See [kiddos-plan.md](kiddos-plan.md) for the full plan,

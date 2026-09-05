@@ -30,6 +30,7 @@ entry = "snake.bas"            # file to run, relative to the folder
 description = "steer the snake, eat the @, don't bite yourself"
 caps = ["speak", "sound"]      # what the game may do: speak, sound
 world = ["~/cave"]             # folders where the kid "is inside the game"
+memory_mb = 64                 # compiled entries: more than the default 16 MB
 ```
 
 `entry` is usually a file in the folder. It may also be the name of a
@@ -40,6 +41,9 @@ bit and a shebang: `#!/bin/basic` for BASIC,
 `#!/bin/ksh` for a shell script. A `.wasm` entry needs no shebang: the
 kernel recognises the file and runs it in the sandbox. `install` sets the bit on any file that
 starts with `#!`.
+
+`memory_mb` (optional) raises the sandbox's 16 MB memory cap for a
+compiled entry; Doom asks for 64, the ceiling is 256.
 
 `caps` is the capability list from the plan: a cartridge without `speak`
 cannot talk, without `sound` cannot beep. `world` tells the tutor to keep
@@ -114,5 +118,6 @@ two sibling `FOR` loops nested inside another `FOR` crash the compiler
 | [sokoban](sokoban.md) | levels as pictures, rules as code, strings as maps | BASIC |
 | [paint](paint.md) | pixel mode: GFX_ words, one flip per key, a picture saved as text | BASIC |
 | [rogue](rogue.md) | a real program in C: arrays, structure, a game loop with no libc | C → wasm |
+| [doom](doom.md) | a famous real program ported: a platform layer, a libc, a memory cap; installed, not built in | C + wasi-libc → wasm |
 | [prison-escape](prison-escape.md) | how to get out of vi: `:q`, `:q!`, `:wq` | Rust, on the vi engine |
 | [vi-quest](vi-quest.md) | vi's motions and edits, one land at a time; unlocks `vi` | Rust + TOML levels |

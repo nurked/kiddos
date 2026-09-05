@@ -1,8 +1,10 @@
 //! Compiled programs run here. Any language that targets wasm32 becomes a
 //! KidDOS language: the module imports the console API from a module named
-//! `kiddos` (see `/usr/include/kiddos.h`) and exports `main`. There is no
-//! WASI: a program cannot see the host, only the screen, the keys, the
-//! clock and the virtual drive, exactly like a BASIC program.
+//! `kiddos` (see `/usr/include/kiddos.h`) and exports `main`. A program
+//! built with a real libc may also use the small WASI subset in `wasi.rs`,
+//! which maps stdio and files onto the machine. Either way a program cannot
+//! see the host, only the screen, the keys, the clock and the virtual
+//! drive, exactly like a BASIC program.
 //!
 //! Safety: memory is capped, execution is epoch-interrupted every few
 //! milliseconds so Ctrl-C (or `kill`) stops any loop, and traps become one
@@ -11,6 +13,7 @@
 pub mod cc;
 pub mod goc;
 mod host;
+mod wasi;
 
 use host::{Exit, State};
 use kiddos_kernel::{CmdResult, Command, Console, Kernel, Proc, Topic};
@@ -19,6 +22,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 pub const MEMORY_LIMIT: usize = 16 * 1024 * 1024;
+/// A cartridge may ask for more through `memory_mb` in its manifest, which
+/// `play` passes down as this environment variable. Capped at 256 MB.
+pub const MEMORY_ENV: &str = "KIDDOS_MEMORY_MB";
+pub const MEMORY_MAX_MB: u64 = 256;
 pub const EPOCH_MS: u64 = 10;
 /// The import module name programs use: `(import "kiddos" "print" ...)`.
 pub const MODULE: &str = "kiddos";
@@ -85,7 +92,7 @@ fn explain(e: &anyhow::Error) -> String {
         );
     }
     if text.contains("memory") && text.contains("limit") {
-        return "The program wanted more memory than a program may have here (16 MB).".into();
+        return "The program wanted more memory than a program may have here.".into();
     }
     text.lines().next().unwrap_or("The program could not run.").to_string()
 }
@@ -95,7 +102,8 @@ fn run_inner(p: &Proc, bytes: &[u8]) -> anyhow::Result<i32> {
     let module = wasmtime::Module::new(&engine, bytes)?;
     let mut linker = wasmtime::Linker::new(&engine);
     host::link(&mut linker)?;
-    let mut store = wasmtime::Store::new(&engine, State::new(p.arc()));
+    wasi::link(&mut linker)?;
+    let mut store = wasmtime::Store::new(&engine, State::new(p.arc(), memory_limit(p)));
     store.limiter(|s| &mut s.limits);
     // Ctrl-C and kill are noticed between epochs
     store.set_epoch_deadline(1);
@@ -108,6 +116,7 @@ fn run_inner(p: &Proc, bytes: &[u8]) -> anyhow::Result<i32> {
             Ok(wasmtime::UpdateDeadline::Continue(1))
         }
     });
+    p.handle_ctrl_c(true);
     let done = Arc::new(AtomicBool::new(false));
     let ticker = {
         let engine = engine.clone();
@@ -144,6 +153,11 @@ fn run_inner(p: &Proc, bytes: &[u8]) -> anyhow::Result<i32> {
     })();
     done.store(true, Ordering::Relaxed);
     let _ = ticker.join();
+    p.handle_ctrl_c(false);
+    {
+        let proc = p.arc();
+        store.data_mut().files.flush_all(&proc);
+    }
     p.cursor_show(true);
     match result {
         Ok(code) => Ok(code),
@@ -152,6 +166,15 @@ fn run_inner(p: &Proc, bytes: &[u8]) -> anyhow::Result<i32> {
             None => Err(e),
         },
     }
+}
+
+/// The memory cap for this process: the default, or what a cartridge asked
+/// for in its manifest.
+fn memory_limit(p: &Proc) -> usize {
+    p.env_get(MEMORY_ENV)
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .map(|mb| mb.clamp(1, MEMORY_MAX_MB) as usize * 1024 * 1024)
+        .unwrap_or(MEMORY_LIMIT)
 }
 
 /// `wasm <file> [args]`: the interpreter the kernel picks for `\0asm` files.

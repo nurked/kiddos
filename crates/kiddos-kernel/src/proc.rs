@@ -171,6 +171,12 @@ impl Proc {
         screen
     }
 
+    /// Declare that this process notices Ctrl-C on the key queue itself
+    /// (with [`Proc::take_key_if`]) instead of relying on being killed.
+    pub fn handle_ctrl_c(&self, v: bool) {
+        self.kernel.set_handles_ctrl_c(self.pid, v);
+    }
+
     pub fn killed(&self) -> bool {
         self.killed.load(Ordering::SeqCst) || self.kernel.shutting_down()
     }

@@ -28,6 +28,9 @@ pub struct Manifest {
     /// Folders (`~` allowed) where the kid is "inside the game": the tutor
     /// keeps quiet there.
     pub world: Vec<String>,
+    /// Memory a compiled entry may use, in MB (0 = the sandbox default of
+    /// 16; Doom asks for 64). Capped by the sandbox at 256.
+    pub memory_mb: u32,
 }
 
 impl Default for Manifest {
@@ -43,6 +46,7 @@ impl Default for Manifest {
             difficulty: 1,
             caps: vec!["speak".into(), "sound".into()],
             min_kiddos: "0.2.0".into(),
+            memory_mb: 0,
             unlocks: Vec::new(),
             world: Vec::new(),
         }
@@ -133,6 +137,10 @@ pub fn launch(p: &Proc, name: &str, args: &[String]) -> Result<i32, String> {
     let mut s = Spawn::child_of(p, argv);
     s.env.insert("CART".into(), dir);
     s.env.insert("GAME".into(), name.to_string());
+    if m.memory_mb > 0 {
+        // read by the WASM sandbox (kiddos_wasm::MEMORY_ENV)
+        s.env.insert("KIDDOS_MEMORY_MB".into(), m.memory_mb.to_string());
+    }
     s.caps = CapSet {
         speak: m.caps.iter().any(|c| c == "speak"),
         sound: m.caps.iter().any(|c| c == "sound"),

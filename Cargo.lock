@@ -1565,7 +1565,7 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "kiddos"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "env_logger",
  "kiddos-basic",
@@ -1587,7 +1587,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-basic"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-channel",
  "async-trait",
@@ -1602,7 +1602,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-builtins"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-cart",
  "kiddos-console",
@@ -1614,7 +1614,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-cart"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-console",
  "kiddos-kernel",
@@ -1626,14 +1626,14 @@ dependencies = [
 
 [[package]]
 name = "kiddos-console"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "font8x8",
 ]
 
 [[package]]
 name = "kiddos-headless"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-basic",
  "kiddos-builtins",
@@ -1652,7 +1652,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-host"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "argon2",
  "cpal",
@@ -1672,11 +1672,11 @@ dependencies = [
 
 [[package]]
 name = "kiddos-i18n"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "kiddos-kernel"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "crossbeam-channel",
  "kiddos-console",
@@ -1688,21 +1688,21 @@ dependencies = [
 
 [[package]]
 name = "kiddos-man"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-kernel",
 ]
 
 [[package]]
 name = "kiddos-mkdrive"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-vfs",
 ]
 
 [[package]]
 name = "kiddos-render"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "bytemuck",
  "kiddos-console",
@@ -1714,7 +1714,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-shell"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-kernel",
  "kiddos-vfs",
@@ -1723,7 +1723,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-tutor"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-cart",
  "kiddos-kernel",
@@ -1735,7 +1735,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-vfs"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "rusqlite",
  "thiserror 2.0.20",
@@ -1743,7 +1743,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-vi"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "kiddos-console",
  "kiddos-kernel",
@@ -1754,7 +1754,7 @@ dependencies = [
 
 [[package]]
 name = "kiddos-wasm"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "kiddos-console",

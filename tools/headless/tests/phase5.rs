@@ -320,3 +320,104 @@ fn paint_paints_saves_and_loads() {
     assert!(rows.iter().all(|r| r.len() == 64));
     assert_eq!(&rows[18][30..36], "..N...", "yellow dot is N, the red one was erased");
 }
+
+/// `KIDDOS_TEST_DOOM_KDC=dist/doom.kdc`: install the Doom cartridge as a
+/// parent would and play it for a moment. Skipped without the file, which
+/// `carts/doom/build.sh` makes.
+#[test]
+fn doom_runs_from_a_cartridge() {
+    let Ok(kdc) = std::env::var("KIDDOS_TEST_DOOM_KDC") else {
+        eprintln!("skipping: set KIDDOS_TEST_DOOM_KDC to a built doom.kdc");
+        return;
+    };
+    let bytes = std::fs::read(&kdc).expect("read doom.kdc");
+    let m = Machine::boot();
+    m.host.cart_files.lock().insert("doom.kdc".into(), bytes);
+    m.run_script(
+        "@clear
+parent
+pw
+pw
+install doom
+@expect doom
+exit
+",
+    );
+    m.run("clear");
+    m.kernel.push_text("play doom\n");
+    // startup reads the WAD and builds tables; give it a while, then watch
+    // for the title screen: a mostly non-black frame
+    let start = std::time::Instant::now();
+    let mut lit = 0usize;
+    while start.elapsed() < std::time::Duration::from_secs(20) {
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        if let Some(px) = m.pixels() {
+            lit = px.front().iter().filter(|&&c| c != 0).count();
+            if lit > 320 * 200 / 4 {
+                break;
+            }
+        }
+    }
+    assert!(
+        m.kernel.screen.lock().pixel_mode(),
+        "doom did not enter pixel mode:\n{}",
+        m.screen()
+    );
+    assert!(lit > 320 * 200 / 4, "doom drew only {lit} non-black pixels");
+    // Doom's own palette replaced the default one
+    let pal = m.pixels().unwrap().palette().to_vec();
+    assert_ne!(pal[1], [0x00, 0x00, 0xAA], "palette should be Doom's, not CGA");
+    // Enter gets past the title, then Ctrl-C ends the program: text is back
+    m.kernel.push_key(Key::Enter);
+    m.kernel.push_key_event(Key::Enter, true);
+    m.kernel.push_key_event(Key::Enter, false);
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    m.kernel.push_key(Key::Ctrl('c'));
+    m.settle();
+    assert!(!m.kernel.screen.lock().pixel_mode());
+    let s = m.screen();
+    assert!(
+        s.contains("I_InitGraphics") || s.contains("Freedoom") || s.contains("DOOM"),
+        "{s}"
+    );
+    m.run("ls -a ~ | grep doom");
+    assert!(m.screen().contains(".doom"), "{}", m.screen());
+}
+
+/// Ctrl-C must stop a game started through `play`, whose own process is
+/// interruptible while the BASIC or WASM child watches the key queue.
+#[test]
+fn ctrl_c_stops_a_game_started_with_play() {
+    let m = Machine::boot();
+    {
+        let root = Actor::root();
+        let mut vfs = m.kernel.vfs.lock();
+        vfs.mkdir_p("/games/spin", &root).unwrap();
+        vfs.write(
+            "/games/spin/cart.toml",
+            b"name = \"spin\"\ntitle = \"Spin\"\nentry = \"spin.bas\"\n",
+            &root,
+        )
+        .unwrap();
+        vfs.write(
+            "/games/spin/spin.bas",
+            b"#!/bin/basic\nGFX_PIXEL 1, 1\nWHILE TRUE\nWEND\n",
+            &root,
+        )
+        .unwrap();
+        vfs.chmod("/games/spin/spin.bas", 0o755, &root).unwrap();
+    }
+    m.run("clear");
+    m.kernel.push_text("play spin\n");
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    assert!(m.kernel.screen.lock().pixel_mode(), "{}", m.screen());
+    m.kernel.push_key(Key::Ctrl('c'));
+    m.settle();
+    assert!(!m.kernel.screen.lock().pixel_mode());
+    assert!(
+        m.kernel.processes().iter().all(|p| p.name != "play"),
+        "play still running"
+    );
+    m.run("echo back");
+    assert!(m.screen().contains("\nback\n"), "{}", m.screen());
+}

@@ -180,7 +180,8 @@ code lives in a `GOSUB` subroutine instead.
 ## The WASM sandbox
 
 `kiddos-wasm` embeds wasmtime (40.x, the newest this Rust supports) with
-cranelift and nothing else: no WASI, no threads, no GC. A module gets one
+cranelift and nothing else: no threads, no GC, and no WASI beyond the
+subset in `wasi.rs` that maps onto the drive (Phase 5). A module gets one
 import module, `kiddos`, whose functions are the console API one to one
 (`print`, `put`, `getkey`, `readkey`, `readline`, `sleep`, `tick`,
 `beep`, `speak`, `random`, `exit`, `fs_read`, `fs_write`, ...). Keys are
@@ -290,6 +291,37 @@ WASM: the `kiddos` import module gained `gfx_*`, `key_down`, `key_event`;
 The paint cartridge is BASIC (so a kid can read it) and saves pictures as
 36 lines of 64 characters, `.` and `A`-`O`, which `cat` and `edit`
 understand.
+
+### WASI, and Doom
+
+Doom needs a libc. Writing a freestanding one (malloc, printf, fopen) was
+the plan; building against wasi-libc and giving the sandbox a small
+`wasi_snapshot_preview1` was less code and far fewer bugs, so that is
+what `kiddos-wasm/src/wasi.rs` is. It maps stdout and stderr onto the
+process's streams, stdin onto `readline`, the clock onto `tick`, `exit`
+onto the same `Exit` error the `kiddos` module uses, and files onto the
+virtual drive under the process's user: one preopened directory `/`,
+whole files held in memory while open and written back on close or
+sync. Networking, directory listing and everything else answer
+`ENOSYS`. A program linked with wasi-libc therefore works when it only
+uses the console API, when it only uses stdio, or both; the sandbox
+story is unchanged, since nothing here can name a host path.
+
+The Doom cartridge (`carts/doom/`) is doomgeneric with a 130-line
+platform file: `CMAP256` makes Doom render into an 8-bit 320x200 buffer
+with its own palette, so a frame is one `gfx_blit` and one `gfx_flip`,
+and the palette is re-uploaded only when Doom changes it. Keys come from
+`key_event`, run is always on (a permanently pressed Shift), and saves
+go to `~/.doom` through the WASI file calls. `build.sh` needs a full
+wasi-sdk, clones doomgeneric at a pinned commit, fetches Freedoom 0.13
+and zips a `.kdc`. The manifest says `memory_mb = 64`; `play` passes
+that as `KIDDOS_MEMORY_MB`, which the sandbox reads and caps at 256.
+
+Doom exposed a kernel bug: Ctrl-C during `play <game>` killed the
+interruptible `play` process and swallowed the key, while the BASIC or
+WASM child, which watches the key queue for Ctrl-C itself, never saw
+it. Processes now declare `handle_ctrl_c(true)` and the kernel queues
+the key as well whenever such a process is alive.
 
 ## Decisions taken on the plan's open questions
 

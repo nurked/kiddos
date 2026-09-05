@@ -1,0 +1,8 @@
+name = "doom"
+title = "Doom (Freedoom)"
+version = "0.1.0"
+author = "id Software, Freedoom project, doomgeneric; KidDOS port"
+entry = "doom.wasm"
+description = "the 1993 game that made 3D happen, with Freedoom's free levels"
+caps = ["sound"]
+memory_mb = 64

@@ -43,6 +43,8 @@ struct Built {
 }
 
 fn build(p: &Arc<Proc>, interactive: bool) -> Result<Built, String> {
+    // Ctrl-C is noticed on the key queue by the yield hook below
+    p.handle_ctrl_c(true);
     let (tx, rx) = async_channel::unbounded();
     let console: Rc<RefCell<dyn EbConsole>> = Rc::new(RefCell::new(KidConsole::new(p.clone(), tx.clone())));
     let sleep_p = p.clone();

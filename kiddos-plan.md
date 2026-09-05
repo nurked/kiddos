@@ -326,14 +326,14 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 - `prison-escape` cart (`:q`, `:q!`, `:wq`) and `vi-quest` cart (ten lands: hjkl, w/b, 0/$, gg/G, x, dd, yy/p, /, i/a/Esc, :wq); finishing unlocks `/bin/vi`, remembered in `~/.unlocks`.
 - **Exit**: v0.5. A kid who has never seen vi leaves it, then earns it.
 
-### Phase 5 — Graphics (5–6 weeks; pixel mode, bindings and paint done, Doom next)
+### Phase 5 — Graphics (done)
 - **Pixel mode in the console**: 320×200 with a 256-color palette, double-buffered, exclusive with text mode (a program is in one or the other). 320×200 doubled is exactly the 640×400 text raster, so the renderer uploads the pixel buffer instead of the text raster and the CRT shader needs nothing. (320×240 is the 4:3 alternative if we ever drop the shared texture size.)
 - **API in all three bindings** (console API v2, v1 kept intact): `pixel`, `line`, `rect`, `fill`, `blit`, `palette`, `text` (our 8×8 font drawn into the buffer), `flip`. Drawing goes to the back buffer; `flip` shows it.
 - **Key down and key up events**, so games can hold a key. The host reports both; text mode keeps today's press-only `readkey`.
 - **BASIC gets `GFX_*`** by implementing EndBASIC's five `draw_*` console methods (`draw_pixel`, `draw_line`, `draw_rect`, `draw_rect_filled`, `draw_circle`), which are no-ops today.
 - **A paint cartridge** as the demo: brushes, colors, save to a file the kid can `cat`.
-- **Then Doom**: `doomgeneric` compiled with `cc` plus a freestanding mini-libc (malloc, string and math routines, file reads through `fs_read`), a per-cartridge memory cap in `cart.toml` (Doom needs more than the default 16 MB), and Freedoom or Chex Quest data so it ships without licensing questions.
-- **Exit**: v0.6. Paint runs; Doom runs at playable speed on the Mac; both from cartridges.
+- **Then Doom**: `doomgeneric` compiled against wasi-libc (a real libc beat a hand-written one: the sandbox gained a small `wasi_snapshot_preview1` that maps stdio and files onto the virtual drive, ~600 lines, and every future C program gets `stdio.h` with it), a per-cartridge memory cap in `cart.toml` (`memory_mb = 64`), and Freedoom Phase 1 data. Shipped as `doom.kdc` (10.6 MB) for a parent to `install`, not in the factory drive, because the WAD alone is 28.8 MB.
+- **Exit**: v0.6. Paint runs; Doom runs at playable speed on the Mac; both from cartridges. Done.
 
 | Risk | Impact | Mitigation |
 |---|---|---|

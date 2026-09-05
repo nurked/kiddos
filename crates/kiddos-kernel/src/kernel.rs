@@ -37,6 +37,10 @@ struct ProcEntry {
     info: ProcInfo,
     killed: Arc<AtomicBool>,
     interruptible: bool,
+    /// The process watches the key queue for Ctrl-C itself (the BASIC and
+    /// WASM runtimes do), so the key must reach the queue even when an
+    /// interruptible parent such as `play` was killed by it.
+    handles_ctrl_c: bool,
 }
 
 /// Things other parts of the machine (the tutor) can listen to.
@@ -323,13 +327,30 @@ impl Kernel {
 
     // ---- keys ----------------------------------------------------------
 
-    /// Feed one key from the host. Ctrl-C interrupts the foreground.
+    /// Feed one key from the host. Ctrl-C interrupts the foreground: it
+    /// kills interruptible processes and is otherwise queued like any key,
+    /// so the shell's line editor, BASIC and WASM programs see it.
     pub fn push_key(&self, key: Key) {
-        if key == Key::Ctrl('c') && self.interrupt_foreground() > 0 {
-            return;
+        if key == Key::Ctrl('c') {
+            let killed = self.interrupt_foreground();
+            let wanted = self
+                .procs
+                .lock()
+                .values()
+                .any(|e| e.handles_ctrl_c && !e.killed.load(Ordering::SeqCst));
+            if killed > 0 && !wanted {
+                return;
+            }
         }
         self.keys.lock().push_back(key);
         self.key_cv.notify_all();
+    }
+
+    /// See [`ProcEntry::handles_ctrl_c`].
+    pub fn set_handles_ctrl_c(&self, pid: Pid, v: bool) {
+        if let Some(e) = self.procs.lock().get_mut(&pid) {
+            e.handles_ctrl_c = v;
+        }
     }
 
     /// Feed text as key presses (`\n` becomes Enter).
@@ -504,6 +525,7 @@ impl Kernel {
                 },
                 killed: killed.clone(),
                 interruptible: s.interruptible && !cmd.keep_alive,
+                handles_ctrl_c: false,
             },
         );
         let proc = Arc::new(Proc::new(self.clone(), pid, argv, s, killed));

@@ -39,7 +39,8 @@ for example); Apple's own clang does not, it has no `wasm-ld`.
 
 `cc` compiles with `--target=wasm32 -O2 -nostdlib -fno-builtin`, links
 with `--no-entry --export-all`, and includes only `/usr/include/kiddos.h`.
-No libc, no WASI, no sysroot: a program can print, draw, read keys,
+No libc, no sysroot (a program built elsewhere against wasi-libc runs too,
+through the sandbox's small WASI subset): a program can print, draw, read keys,
 sleep, beep, speak, and read or write the kid's files. Nothing else
 exists, so nothing else needs shipping.
 

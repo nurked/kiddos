@@ -12,19 +12,22 @@ use wasmtime::{Caller, Linker};
 pub struct State {
     pub proc: Arc<Proc>,
     pub limits: wasmtime::StoreLimits,
+    /// Files opened through the WASI shim.
+    pub files: crate::wasi::Files,
     rng: u64,
 }
 
 impl State {
-    pub fn new(proc: Arc<Proc>) -> State {
+    pub fn new(proc: Arc<Proc>, memory_limit: usize) -> State {
         let seed = proc.tick() ^ 0x9E37_79B9_7F4A_7C15 ^ ((proc.pid as u64) << 32);
         State {
             proc,
             limits: wasmtime::StoreLimitsBuilder::new()
-                .memory_size(crate::MEMORY_LIMIT)
+                .memory_size(memory_limit)
                 .instances(1)
                 .tables(4)
                 .build(),
+            files: Default::default(),
             rng: if seed == 0 { 1 } else { seed },
         }
     }
