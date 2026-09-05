@@ -86,7 +86,8 @@ Cyrillic block in `kiddos-console/src/cyrillic.rs`, doubled vertically into
 The CPU rasterizes the 80x25 grid into a 640x400 RGBA texture only when the
 screen generation or cursor blink changes; the WGSL shader letterboxes it to
 4:3 and applies curvature, scan lines, glow, vignette and rounded corners.
-`crt off` draws it flat.
+`crt off` draws it flat. In pixel mode (below) the same texture is filled
+from the 320x200 canvas at 2x instead; the shader does not know.
 
 ## Strings
 
@@ -242,6 +243,53 @@ the plan's "unlock tools by learning them", and `vi` is its first use.
 
 Cartridges may name a built-in command as their `entry`; the folder then
 carries only docs and levels. Levels are TOML on the drive.
+
+## Pixel mode (Phase 5)
+
+`kiddos-console/src/pixels.rs` is a 320x200 canvas of palette indices,
+double-buffered, with a 256-entry palette (0-15 CGA, 16-31 grays, 32-247
+a 6x6x6 cube, 8 spares) and the primitives: pixel, line (Bresenham),
+rect, fill, circle (midpoint), blit with a transparent color, read, text
+with the 8x8 font, flip. `Screen` owns an `Option<Box<Pixels>>`: entering
+pixel mode allocates it and the text cells stay intact underneath, so
+leaving is a `take()` and the shell's screen is back. Only `flip` and
+palette changes bump the screen generation; drawing to the back buffer
+is invisible and free of redraws.
+
+The `Console` trait is API v2: the v1 methods are untouched and the
+`gfx_*` methods plus `key_held`/`key_event` were added. Every drawing
+call enters pixel mode on its own (`Proc::ensure_gfx`), so a C program's
+first `kd_gfx_pixel` just works; `gfx_mode(false)` or the process ending
+brings the text back (`Proc::close` checks a `gfx_owner` flag, so Ctrl-C
+and crashes restore the screen too).
+
+Key state lives in the kernel: the host reports presses and releases
+(`push_key_event`), the kernel keeps a held set and a capped event queue.
+Releases also clear the case-swapped character, since a key pressed with
+Shift may be released without it, and the window losing focus releases
+everything. Entering pixel mode clears the event queue so a game does
+not replay the shell's typing. Presses still go through the old key
+queue, so `readkey` and the shell are unchanged.
+
+BASIC: `KidConsole` implements EndBASIC's `size_pixels` and `draw_*`
+methods, which gives the stock `GFX_PIXEL/LINE/RECT/RECTF/CIRCLE/CIRCLEF`
+and `GFX_SYNC` for free, drawing in the current `COLOR`. Added: `SCREEN
+13`/`SCREEN 0` (the QBasic spelling kids' books use), `PALETTE`,
+`GFX_TEXT`, `GFX_FLIP`, `GFX_GET`, `KEYDOWN("LEFT")`, and the file words
+`READFILE`, `WRITEFILE`, `APPENDFILE` that the C and Go bindings already
+had. Rule: a program that ends in pixel mode keeps its picture up until
+a key is pressed (`finish_gfx`), so a first `GFX_CIRCLE` at the prompt
+does not vanish; after a Break or an error the text returns at once so
+the message is seen.
+
+WASM: the `kiddos` import module gained `gfx_*`, `key_down`, `key_event`;
+`gfx_blit` reads the sprite from module memory (capped at 4096x4096),
+`key_event` packs the key code with bit 24 set for a release. Mirrored in
+`/usr/include/kiddos.h` and the Go package.
+
+The paint cartridge is BASIC (so a kid can read it) and saves pictures as
+36 lines of 64 characters, `.` and `A`-`O`, which `cat` and `edit`
+understand.
 
 ## Decisions taken on the plan's open questions
 

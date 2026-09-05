@@ -1,0 +1,7 @@
+name = "paint"
+title = "Paint"
+version = "0.1.0"
+author = "KidDOS"
+entry = "paint.bas"
+description = "draw pictures pixel by pixel in 16 colors, save them as text"
+caps = ["sound"]

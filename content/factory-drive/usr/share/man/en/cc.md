@@ -21,7 +21,7 @@ cat /usr/include/kiddos.h
 - `-v` show the compiler's own words instead of my translation
 
 ## SEE ALSO
-wasm, basic, edit
+wasm, basic, edit, gfx
 
 ## GROWN-UP NOTE
 There is no libc: `kiddos.h` is the whole API. The compiler is a real

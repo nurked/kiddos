@@ -20,7 +20,7 @@ cat /usr/share/go/kiddos/kiddos.go
 - `-v` show the compiler's own words instead of my translation
 
 ## SEE ALSO
-cc, wasm, basic
+cc, wasm, basic, gfx
 
 ## GROWN-UP NOTE
 The compiler is TinyGo with a Go toolchain and wasm-opt, installed by a

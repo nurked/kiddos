@@ -31,9 +31,13 @@ it directly, and `cat name.bas` shows it like any file.
 - `TICK` milliseconds since the machine started
 - `PUT x, y, "text", fg, bg` draw text at a spot, in colors 0-15
 - `CLS`, `COLOR fg, bg`, `LOCATE row, col`, `SLEEP seconds`, `INPUT`
+- `READFILE("name")`, `WRITEFILE "name", text`, `APPENDFILE "name", text`
+- `SCREEN 13` pixel mode, then `GFX_PIXEL`, `GFX_LINE`, `GFX_RECT`,
+  `GFX_RECTF`, `GFX_CIRCLE`, `GFX_CIRCLEF`, `GFX_TEXT`, `GFX_FLIP`,
+  `GFX_GET`, `PALETTE`, `KEYDOWN("LEFT")`: see `man gfx`
 
 ## SEE ALSO
-run, edit, games
+run, edit, games, gfx
 
 ## GROWN-UP NOTE
 This is EndBASIC 0.12 (Apache-2.0), a modern BASIC: no line numbers,

@@ -1,6 +1,7 @@
-//! KidDOS statements: SPEAK, BEEP, KEY$, TICK, PUT, and for pixel mode
-//! SCREEN, PALETTE, GFX_TEXT, GFX_FLIP, GFX_GET, KEYDOWN. They mirror the
-//! console API one to one.
+//! KidDOS statements: SPEAK, BEEP, KEY$, TICK, PUT, the file words
+//! READFILE, WRITEFILE, APPENDFILE, and for pixel mode SCREEN, PALETTE,
+//! GFX_TEXT, GFX_FLIP, GFX_GET, KEYDOWN. They mirror the console API one
+//! to one.
 
 use async_trait::async_trait;
 use endbasic_core::ast::{ArgSep, ExprType};
@@ -39,7 +40,10 @@ pub fn add_all(machine: &mut Machine, p: Arc<Proc>, console: Rc<RefCell<dyn EbCo
     machine.add_callable(Rc::new(GfxText::new(p.clone(), console)));
     machine.add_callable(Rc::new(GfxFlip::new(p.clone())));
     machine.add_callable(Rc::new(GfxGet::new(p.clone())));
-    machine.add_callable(Rc::new(KeyDown::new(p)));
+    machine.add_callable(Rc::new(KeyDown::new(p.clone())));
+    machine.add_callable(Rc::new(ReadFile::new(p.clone())));
+    machine.add_callable(Rc::new(WriteFile::new(p.clone(), false)));
+    machine.add_callable(Rc::new(WriteFile::new(p, true)));
 }
 
 /// The key a name from [`key_name`] stands for (case-insensitive).
@@ -550,5 +554,97 @@ impl Callable for KeyDown {
         let name = scope.pop_string();
         let held = key_from_name(&name).map(|k| self.p.key_held(k)).unwrap_or(false);
         scope.return_boolean(held)
+    }
+}
+
+struct ReadFile {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+}
+
+impl ReadFile {
+    fn new(p: Arc<Proc>) -> ReadFile {
+        ReadFile {
+            metadata: CallableMetadataBuilder::new("READFILE")
+                .with_return_type(ExprType::Text)
+                .with_syntax(&[(&[arg!("path", Text, ArgSepSyntax::End)], None)])
+                .with_category(CATEGORY)
+                .with_description(
+                    "The whole text of a file: T$ = READFILE(\"notes.txt\"). Lines are separated by \
+                     CHR(10). An empty string if there is no such file.",
+                )
+                .build(),
+            p,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for ReadFile {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, mut scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        let path = scope.pop_string();
+        let text = self.p.fs().read_string(&path).unwrap_or_default();
+        scope.return_string(text)
+    }
+}
+
+struct WriteFile {
+    metadata: CallableMetadata,
+    p: Arc<Proc>,
+    append: bool,
+}
+
+impl WriteFile {
+    fn new(p: Arc<Proc>, append: bool) -> WriteFile {
+        let (name, desc) = if append {
+            (
+                "APPENDFILE",
+                "Adds text to the end of a file: APPENDFILE \"log.txt\", \"one more line\" + CHR(10).",
+            )
+        } else {
+            (
+                "WRITEFILE",
+                "Puts text into a file, replacing what was there: WRITEFILE \"notes.txt\", T$. \
+                 The shell can cat it afterwards.",
+            )
+        };
+        WriteFile {
+            metadata: CallableMetadataBuilder::new(name)
+                .with_syntax(&[(
+                    &[
+                        arg!("path", Text, ArgSepSyntax::Exactly(ArgSep::Long)),
+                        arg!("text", Text, ArgSepSyntax::End),
+                    ],
+                    None,
+                )])
+                .with_category(CATEGORY)
+                .with_description(desc)
+                .build(),
+            p,
+            append,
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Callable for WriteFile {
+    fn metadata(&self) -> &CallableMetadata {
+        &self.metadata
+    }
+    async fn exec(&self, mut scope: Scope<'_>, _machine: &mut Machine) -> Result<()> {
+        let path = scope.pop_string();
+        let text = scope.pop_string();
+        let r = if self.append {
+            self.p.fs().append(&path, text.as_bytes())
+        } else {
+            self.p.fs().write(&path, text.as_bytes())
+        };
+        match r {
+            Ok(()) => Ok(()),
+            Err(e) => Err(scope.io_error(std::io::Error::other(self.p.explain(&e)))),
+        }
     }
 }

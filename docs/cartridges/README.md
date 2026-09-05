@@ -91,6 +91,8 @@ additions every game below uses:
 | `INKEY$` | the key pressed right now or `""`; never waits |
 | `TICK` | milliseconds since boot |
 | `SPEAK "..."`, `BEEP freq, ms` | voice and sound |
+| `SCREEN 13`, `GFX_RECTF x1, y1, x2, y2`, `GFX_TEXT x, y, "t"`, `GFX_FLIP`, `KEYDOWN("UP")` | pixel mode, 320x200 in 256 colors; see `man gfx` |
+| `READFILE("f")`, `WRITEFILE "f", t$`, `APPENDFILE "f", t$` | files, as text |
 
 Quirks of this EndBASIC version, learned the hard way and documented in
 [../ARCHITECTURE.md](../ARCHITECTURE.md): `MID` counts from 0, `STR`
@@ -110,6 +112,7 @@ two sibling `FOR` loops nested inside another `FOR` crash the compiler
 | [typing](typing.md) | KEY$, TICK, measuring time | BASIC |
 | [tetris](tetris.md) | 2-D arrays, GOSUB subroutines, pictures as data | BASIC |
 | [sokoban](sokoban.md) | levels as pictures, rules as code, strings as maps | BASIC |
+| [paint](paint.md) | pixel mode: GFX_ words, one flip per key, a picture saved as text | BASIC |
 | [rogue](rogue.md) | a real program in C: arrays, structure, a game loop with no libc | C → wasm |
 | [prison-escape](prison-escape.md) | how to get out of vi: `:q`, `:q!`, `:wq` | Rust, on the vi engine |
 | [vi-quest](vi-quest.md) | vi's motions and edits, one land at a time; unlocks `vi` | Rust + TOML levels |

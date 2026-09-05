@@ -265,3 +265,58 @@ fn pixel_mode_hides_text_and_restores_it() {
     assert!(!m.kernel.screen.lock().pixel_mode());
     assert!(m.screen().contains("remember me"));
 }
+
+#[test]
+fn basic_reads_and_writes_files() {
+    let m = Machine::boot();
+    m.run("clear");
+    write(
+        &m,
+        "files.bas",
+        "WRITEFILE \"note.txt\", \"one\" + CHR(10)\nAPPENDFILE \"note.txt\", \"two\" + CHR(10)\nPRINT LEN(READFILE(\"note.txt\"))\nPRINT LEN(READFILE(\"nothing.txt\"))\n",
+    );
+    m.run("basic files.bas");
+    m.run("cat note.txt");
+    let s = m.screen();
+    assert!(s.contains(" 8\n 0\n"), "{s}");
+    assert!(s.contains("one\ntwo"), "{s}");
+}
+
+#[test]
+fn paint_paints_saves_and_loads() {
+    let m = Machine::boot();
+    m.run("clear");
+    m.run("play paint");
+    assert!(m.kernel.screen.lock().pixel_mode(), "{}", m.screen());
+    // cursor starts at dot (32, 18); paint it yellow (the default color)
+    m.key(Key::Char(' '));
+    assert_eq!(front(&m, 32 * 5 + 2, 18 * 5 + 2), 14);
+    // move right, pick red (4), paint; erase is X
+    m.key(Key::Right);
+    m.key(Key::Char('4'));
+    m.key(Key::Char(' '));
+    assert_eq!(front(&m, 33 * 5 + 2, 18 * 5 + 2), 4);
+    m.key(Key::Char('x'));
+    m.key(Key::Left);
+    assert_eq!(front(&m, 33 * 5 + 2, 18 * 5 + 2), 0);
+    // the color bar and help line are there
+    assert_eq!(front(&m, 4 * 12 + 5, 186), 4);
+    m.key(Key::Char('s'));
+    m.key(Key::Char('n'));
+    assert_eq!(front(&m, 32 * 5 + 2, 18 * 5 + 2), 0, "N clears");
+    m.key(Key::Char('l'));
+    assert_eq!(front(&m, 32 * 5 + 2, 18 * 5 + 2), 14, "L brings it back");
+    m.key(Key::Escape);
+    assert!(!m.kernel.screen.lock().pixel_mode());
+    let text = m
+        .kernel
+        .vfs
+        .lock()
+        .read("/home/kid/picture.txt", &Actor::user("kid"))
+        .unwrap();
+    let text = String::from_utf8(text).unwrap();
+    let rows: Vec<&str> = text.lines().collect();
+    assert_eq!(rows.len(), 36);
+    assert!(rows.iter().all(|r| r.len() == 64));
+    assert_eq!(&rows[18][30..36], "..N...", "yellow dot is N, the red one was erased");
+}
