@@ -1,4 +1,4 @@
-# Architecture notes (Phases 0–4)
+# Architecture notes (Phases 0–6)
 
 This records how the plan in `kiddos-plan.md` was realized and where it was
 bent. Read the plan first.
@@ -322,6 +322,56 @@ interruptible `play` process and swallowed the key, while the BASIC or
 WASM child, which watches the key queue for Ctrl-C itself, never saw
 it. Processes now declare `handle_ctrl_c(true)` and the kernel queues
 the key as well whenever such a process is alive.
+
+## ARM assembly and the debugger (Phase 6)
+
+`kiddos-arm` is a small AArch64: `insn.rs` decodes the real 32-bit
+encodings of about seventy instructions into one enum, `vm.rs` executes
+them (31 registers, sp, pc, NZCV, a flat 1 MB memory with the code at
+0x10000 and the stack at the top), `asm.rs` is a two-pass GNU-syntax
+assembler with a literal pool for `ldr x0, =sym`, and `dis.rs` turns
+words back into text. Nothing runs natively, on any platform: the
+emulator is a plain interpreter, which is what makes single-stepping,
+determinism and kid-worded faults possible ("The program read from
+address 0x0 - there is nothing there"). Writing over the code section is
+a fault too, on purpose.
+
+The encodings are checked against a real clang: `tests/clang.rs`
+assembles a corpus with `clang -target aarch64-linux-gnu` and compares
+every word, and skips where no such clang exists. The `dis` output for
+every corpus line is fed back through `as` as well.
+
+`as hello.s` writes `hello`, a `\0arm` image: header, code, data, a
+line table, every label, and the source itself. The kernel routes
+`\0arm` files to the `arm` command the way `\0asm` goes to `wasm`, so
+`./hello` just works. Embedding the source is what lets `debug hello`
+and `dis hello` show it after the `.s` file is gone or edited.
+
+System calls use Linux's AArch64 convention (`x8` number, `x0..x5`
+arguments, `svc #0`) and Linux's numbers where one exists: 63 read, 64
+write, 93 exit, 101 nanosleep, 278 getrandom. The KidDOS-only calls
+(keys, sleep, beep, files, the text screen) live from 1000 up and map
+onto the same console API C and Go use. `sys.rs` implements them over a
+`Proc`; an `Io` trait lets the debugger capture output into its own pane
+and ask for input on its status row.
+
+The debugger is not gdb: a full screen with the source and the current
+line lit on the left, registers on the right (changed ones in yellow,
+addresses shown as `0x10020 msg`), a memory window, the program's output,
+and a one-line status that says what the last instruction did. It draws
+into a shadow buffer and `put`s only the cells that changed. Breakpoints
+are per source line; `n` steps over `bl`; `c` polls for Ctrl-C every
+4096 instructions.
+
+BASIC tracing was on the list as "cheap"; it is not: EndBASIC's yield
+hook carries no line number, so a `trace` flag would mean patching the
+interpreter. Left for later, with C debugging.
+
+Bug Hunt is a Rust command behind a cartridge, like vi-quest: eight `.s`
+files with one planted bug each are copied to `~/bug-hunt`, assembled and
+run headless with a step limit, and their output compared to the expected
+text. The test suite fixes each one in turn and checks that exactly that
+line turns green, so the bugs stay the bugs they were designed to be.
 
 ## Decisions taken on the plan's open questions
 

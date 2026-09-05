@@ -1,4 +1,4 @@
-//! Text tools: echo grep wc sort uniq rev tr cut seq yes
+//! Text tools: echo grep wc sort uniq rev tr cut seq yes hexdump
 
 use crate::files::read_inputs;
 use crate::util::{need_operand, wants_help, Args};
@@ -18,6 +18,7 @@ pub fn register(k: &Kernel) {
         Command::new("cut", cut, "keep only part of each line", T),
         Command::new("seq", seq, "count from one number to another", T),
         Command::new("yes", yes, "say yes forever (press Ctrl-C to stop)", T),
+        Command::new("hexdump", hexdump, "show a file's bytes as numbers", T),
     ] {
         k.register(c);
     }
@@ -480,4 +481,55 @@ fn yes(p: &Proc, args: &[String]) -> CmdResult {
             return Err(kiddos_kernel::Interrupted);
         }
     }
+}
+
+/// `hexdump [-n bytes] [file...]`: every byte as hex, 16 per row, with
+/// the letters on the right. Works on any file: a program, a picture, a
+/// text. Stops after `-n` bytes (default: the whole file).
+fn hexdump(p: &Proc, args: &[String]) -> CmdResult {
+    if wants_help(p, args) {
+        return Ok(0);
+    }
+    let a = Args::parse(args, &["n"]);
+    if a.positional.is_empty() && p.stdin_is_tty() {
+        return Ok(need_operand(p));
+    }
+    let limit = a
+        .value("n")
+        .and_then(|v| v.trim().parse::<usize>().ok())
+        .unwrap_or(usize::MAX);
+    let mut data: Vec<u8> = Vec::new();
+    let mut failed = false;
+    if a.positional.is_empty() {
+        data = p.read_stdin_all()?;
+    } else {
+        for f in &a.positional {
+            match p.fs().read(f) {
+                Ok(b) => data.extend(b),
+                Err(e) => {
+                    p.complain(&e);
+                    failed = true;
+                }
+            }
+        }
+    }
+    let shown = &data[..data.len().min(limit)];
+    let mut out = String::new();
+    for (i, chunk) in shown.chunks(16).enumerate() {
+        let mut hex = String::new();
+        for (j, b) in chunk.iter().enumerate() {
+            if j == 8 {
+                hex.push(' ');
+            }
+            hex.push_str(&format!("{b:02x} "));
+        }
+        let ascii: String = chunk
+            .iter()
+            .map(|b| if (0x20..0x7f).contains(b) { *b as char } else { '.' })
+            .collect();
+        out.push_str(&format!("{:08x}  {hex:<49} |{ascii}|\n", i * 16));
+    }
+    out.push_str(&format!("{:08x}\n", shown.len()));
+    p.print(&out);
+    Ok(if failed { 1 } else { 0 })
 }

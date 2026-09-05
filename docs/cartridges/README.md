@@ -121,3 +121,4 @@ two sibling `FOR` loops nested inside another `FOR` crash the compiler
 | [doom](doom.md) | a famous real program ported: a platform layer, a libc, a memory cap; installed, not built in | C + wasi-libc → wasm |
 | [prison-escape](prison-escape.md) | how to get out of vi: `:q`, `:q!`, `:wq` | Rust, on the vi engine |
 | [vi-quest](vi-quest.md) | vi's motions and edits, one land at a time; unlocks `vi` | Rust + TOML levels |
+| [bug-hunt](bug-hunt.md) | reading a program the way the CPU does: eight assembly programs, one bug each, found with `debug` | Rust checker + `.s` files |

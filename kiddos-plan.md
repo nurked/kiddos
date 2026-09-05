@@ -233,6 +233,10 @@ Crate boundaries are the sandbox boundaries. `kiddos-builtins`, `kiddos-basic`, 
 | Games | Cartridge folders | No recompiles, kid-inspectable, community-portable |
 | Progression | Unlock tools by learning | Turns curriculum into a game loop without gamifying with points |
 | Content format | Markdown/YAML/TOML | Non-programmers (translators, teachers) can contribute |
+| Assembly | AArch64 user-mode subset, own interpreter (`kiddos-arm`) | Real encodings so clang output runs and what kids learn is true; emulated so it single-steps, never runs native, and faults in kid words; QEMU/Unicorn rejected (size, C, licensing, no kid-grade errors) |
+| Assembler output | `\0arm` image with source and line table embedded | `debug`/`dis` need no separate source; kernel dispatch mirrors `\0asm` |
+| System calls | Linux AArch64 numbers where one exists, 1000+ for KidDOS-only | `mov x8, #64; svc #0` is the same on a Pi |
+| Debugger | Full-screen three-pane, read-only, per-line breakpoints | Kids watch numbers change; not gdb's prompt |
 
 ---
 
@@ -341,7 +345,9 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 | Doom's libc surface is large | Weeks of shims | Start from doomgeneric's short platform layer; stub what Freedoom never calls; measure before adding |
 | Two modes to keep consistent | Bugs in every program | Exclusive modes: entering pixel mode saves the text screen, leaving restores it (the alt-screen path already exists) |
 
-### Phase 6 — ARM assembly and debug tools (4–5 weeks)
+### Phase 6 — ARM assembly and debug tools (4–5 weeks) — done (v0.7)
+Done as planned, with three deviations: the BASIC `trace` flag is not cheap (EndBASIC has no line hook) and was dropped with C debugging to Later; the assembled image embeds the source and a line table, so `debug` and `dis` work on the binary alone; the subset grew to ~70 instructions (pairs, conditional select, extends) because clang's output and a readable `count.s` needed them. Encodings are differential-tested against clang.
+
 Goal: a kid who can write BASIC and a little C gets to see the machine underneath: registers, memory, one instruction at a time. ARM because it is the CPU in the Mac, the Pi and every phone, and because AArch64 is regular enough to teach.
 
 **Figure out first (one-week spike, decisions written into §6):**

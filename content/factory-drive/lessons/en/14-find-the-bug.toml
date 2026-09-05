@@ -1,0 +1,34 @@
+id = "14-find-the-bug"
+title = "Find the bug"
+intro = "Programs are wrong before they are right. The debugger is how you find out where. Bug Hunt has eight tiny programs, each with one mistake. Fix the first one here; the rest are yours."
+outro = "Lesson 14 done. You found a bug by watching the machine instead of guessing. That is the whole skill. Seven more wait in ~/bug-hunt: play bug-hunt shows which."
+badge = """
+ .-------------.
+ |  BUG FINDER |
+ |  debug edit |
+ '-------------'"""
+
+[[steps]]
+say = "Start the hunt:   play bug-hunt"
+expect = ["play bug-hunt", "play bug-hunt *"]
+hint = ["Type: play bug-hunt"]
+done = "Eight programs copied to ~/bug-hunt, and none of them passes. The first one should print Hello! and prints less."
+
+[[steps]]
+say = "Read the first one:   cat ~/bug-hunt/01-hello.s   Where does it say how many bytes to print?"
+expect = ["cat ~/bug-hunt/01-hello.s", "cat bug-hunt/01-hello.s", "cat */01-hello.s", "less */01-hello.s", "less ~/bug-hunt/01-hello.s"]
+hint = ["Type: cat ~/bug-hunt/01-hello.s"]
+done = "mov x2, #5 says: print 5 bytes. Count the letters in the text, and the new line at its end."
+
+[[steps]]
+say = "Watch it:   debug ~/bug-hunt/01-hello.s   Press s until svc runs and look at the output pane. Then q."
+expect = ["debug ~/bug-hunt/01-hello.s", "debug bug-hunt/01-hello.s", "debug */01-hello.s"]
+hint = ["Type: debug ~/bug-hunt/01-hello.s   step with s, watch x2 and the output, leave with q"]
+done = "x2 was 5, so write printed 5 bytes: Hello, no ! and no new line. \"Hello!\" plus the new line is 7."
+
+[[steps]]
+say = "Fix it:   edit ~/bug-hunt/01-hello.s   change the 5 to 7 (or to len, and add   len = . - msg   under msg). Save, then check:   play bug-hunt"
+expect = ["play bug-hunt", "play bug-hunt *"]
+check = "missing /nothing"
+hint = ["edit ~/bug-hunt/01-hello.s, make it mov x2, #7, Ctrl-S, Ctrl-Q, then: play bug-hunt", "If it still says BUG, cat the file: is it #7 now? Is the text exactly Hello! with a new line?"]
+done = "If 01-hello.s says OK, you fixed a real bug the real way: read, watch, change, check. The other seven hide different mistakes; the hint under each one helps."

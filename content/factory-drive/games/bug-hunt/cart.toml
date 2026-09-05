@@ -1,0 +1,8 @@
+name = "bug-hunt"
+title = "Bug Hunt"
+version = "0.1.0"
+author = "KidDOS"
+entry = "bug-hunt"
+description = "eight tiny ARM programs, one bug each; find them with debug"
+caps = ["sound"]
+world = ["~/bug-hunt"]

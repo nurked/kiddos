@@ -49,7 +49,7 @@ fn tutor_walks_through_lesson_one() {
 fn tutor_checks_machine_state_and_can_be_silenced() {
     let m = Machine::boot();
     m.run("lesson 2");
-    assert!(m.screen().contains("Lesson 2 of 12: Where am I?"), "{}", m.screen());
+    assert!(m.screen().contains("Lesson 2 of 14: Where am I?"), "{}", m.screen());
     m.run("pwd");
     m.run("ls");
     m.run("clear");

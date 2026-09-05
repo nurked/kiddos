@@ -110,6 +110,76 @@ impl Key {
     }
 }
 
+/// Keys as one integer, the way compiled programs (C, Go, assembly) see
+/// them: printable characters are their Unicode value, named keys start
+/// at `KEY_NAMED`, Ctrl and Alt combinations at `KEY_CTRL` and `KEY_ALT`.
+pub const KEY_NAMED: i32 = 0x110000;
+pub const KEY_CTRL: i32 = 0x120000;
+pub const KEY_ALT: i32 = 0x130000;
+/// A key event as one integer: the key code, plus this bit when released.
+pub const KEY_UP_BIT: i32 = 0x100_0000;
+
+impl Key {
+    pub fn code(self) -> i32 {
+        match self {
+            Key::Char(c) => c as i32,
+            Key::Enter => KEY_NAMED + 1,
+            Key::Backspace => KEY_NAMED + 2,
+            Key::Tab => KEY_NAMED + 3,
+            Key::Escape => KEY_NAMED + 4,
+            Key::Up => KEY_NAMED + 5,
+            Key::Down => KEY_NAMED + 6,
+            Key::Left => KEY_NAMED + 7,
+            Key::Right => KEY_NAMED + 8,
+            Key::Home => KEY_NAMED + 9,
+            Key::End => KEY_NAMED + 10,
+            Key::PageUp => KEY_NAMED + 11,
+            Key::PageDown => KEY_NAMED + 12,
+            Key::Insert => KEY_NAMED + 13,
+            Key::Delete => KEY_NAMED + 14,
+            Key::BackTab => KEY_NAMED + 15,
+            Key::F(n) => KEY_NAMED + 20 + n as i32,
+            Key::Ctrl(c) => KEY_CTRL + c as i32,
+            Key::Alt(c) => KEY_ALT + c as i32,
+        }
+    }
+
+    /// The inverse of [`Key::code`].
+    pub fn from_code(code: i32) -> Option<Key> {
+        Some(match code {
+            c if (0..KEY_NAMED).contains(&c) => Key::Char(char::from_u32(c as u32)?),
+            c if (KEY_CTRL..KEY_ALT).contains(&c) => Key::Ctrl(char::from_u32((c - KEY_CTRL) as u32)?),
+            c if (KEY_ALT..KEY_ALT + 0x10000).contains(&c) => Key::Alt(char::from_u32((c - KEY_ALT) as u32)?),
+            c => match c - KEY_NAMED {
+                1 => Key::Enter,
+                2 => Key::Backspace,
+                3 => Key::Tab,
+                4 => Key::Escape,
+                5 => Key::Up,
+                6 => Key::Down,
+                7 => Key::Left,
+                8 => Key::Right,
+                9 => Key::Home,
+                10 => Key::End,
+                11 => Key::PageUp,
+                12 => Key::PageDown,
+                13 => Key::Insert,
+                14 => Key::Delete,
+                15 => Key::BackTab,
+                n if (21..=32).contains(&n) => Key::F((n - 20) as u8),
+                _ => return None,
+            },
+        })
+    }
+}
+
+impl KeyEvent {
+    /// The key's code, with `KEY_UP_BIT` set when the key was released.
+    pub fn code(self) -> i32 {
+        self.key.code() | if self.down { 0 } else { KEY_UP_BIT }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

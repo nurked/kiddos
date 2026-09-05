@@ -12,6 +12,7 @@ members = [
     "crates/kiddos-basic",
     "crates/kiddos-wasm",
     "crates/kiddos-vi",
+    "crates/kiddos-arm",
     "crates/kiddos-i18n",
     "crates/kiddos-render",
     "crates/kiddos-host",
@@ -21,7 +22,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
@@ -39,6 +40,7 @@ kiddos-tutor = { path = "crates/kiddos-tutor" }
 kiddos-basic = { path = "crates/kiddos-basic" }
 kiddos-wasm = { path = "crates/kiddos-wasm" }
 kiddos-vi = { path = "crates/kiddos-vi" }
+kiddos-arm = { path = "crates/kiddos-arm" }
 kiddos-i18n = { path = "crates/kiddos-i18n" }
 kiddos-render = { path = "crates/kiddos-render" }
 kiddos-host = { path = "crates/kiddos-host" }

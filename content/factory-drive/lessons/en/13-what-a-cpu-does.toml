@@ -1,0 +1,41 @@
+id = "13-what-a-cpu-does"
+title = "What a CPU does"
+intro = "Under BASIC and C there is a CPU that only knows tiny steps: put a number in a box, add two boxes, jump to a line. Assembly is those steps written down. This machine speaks ARM, the same CPU as a phone. Let's run one step at a time."
+outro = "Lesson 13 done. You have watched a CPU work: registers, one instruction at a time, a system call to print. man asm and man as have the whole list of instructions. Next: find bugs with it."
+badge = """
+ .-------------.
+ |  CPU WATCHER|
+ |  mov add svc|
+ '-------------'"""
+
+[[steps]]
+say = "Copy the smallest program here:   cp /usr/share/examples/hello.s .   then read it:   cat hello.s"
+expect = ["cat hello.s", "cat ./hello.s", "less hello.s"]
+check = "exists hello.s"
+hint = ["Two commands: cp /usr/share/examples/hello.s .   then   cat hello.s"]
+done = "Eight instructions. mov puts a number in a register (a box called x0, x1...), adr finds where the text is, svc asks the machine to print it."
+
+[[steps]]
+say = "Turn it into a program the CPU can run:   as hello.s"
+expect = ["as hello.s", "as ./hello.s"]
+check = "exists hello"
+hint = ["Type: as hello.s   (as is short for assembler)"]
+done = "It made a file called hello, 32 bytes of instructions. Run it:"
+
+[[steps]]
+say = "Run it:   ./hello"
+expect = ["./hello", "arm hello"]
+hint = ["Type: ./hello"]
+done = "Hello from ARM. Every one of those letters went through x1 and x2 and a system call. Now watch it happen slowly."
+
+[[steps]]
+say = "Open it in the debugger:   debug hello   Press s eight times and watch the registers on the right. Then press q."
+expect = ["debug hello", "debug ./hello", "debug hello.s"]
+hint = ["Type: debug hello   then press s (step) again and again. The yellow numbers are the ones that just changed. q leaves."]
+done = "x0 became 1, x1 became the address of the text, x2 became 16, x8 became 64, and svc printed. That is all a computer ever does, just faster."
+
+[[steps]]
+say = "Last: see what the machine sees:   dis hello"
+expect = ["dis hello", "dis ./hello", "hexdump hello"]
+hint = ["Type: dis hello"]
+done = "Each line: an address, four bytes, and what they mean. The bytes ARE the program. hexdump hello shows them raw."

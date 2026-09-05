@@ -32,6 +32,7 @@ impl Machine {
         kiddos_cart::register(&kernel);
         kiddos_wasm::register(&kernel);
         kiddos_vi::register(&kernel);
+        kiddos_arm::register(&kernel);
         kiddos_tutor::Tutor::install(&kernel);
         let init = kernel.boot();
         let m = Machine {
@@ -128,6 +129,24 @@ impl Machine {
             }
             None => String::new(),
         }
+    }
+
+    /// A file on the drive, read as the kid.
+    pub fn vfs_read_string(&self, path: &str) -> String {
+        self.kernel
+            .vfs
+            .lock()
+            .read_string(path, &kiddos_vfs::Actor::user(kiddos_kernel::KID_USER))
+            .unwrap_or_else(|e| panic!("{path}: {e}"))
+    }
+
+    /// Write a file on the drive as the kid.
+    pub fn vfs_write(&self, path: &str, data: &[u8]) {
+        self.kernel
+            .vfs
+            .lock()
+            .write(path, data, &kiddos_vfs::Actor::user(kiddos_kernel::KID_USER))
+            .unwrap_or_else(|e| panic!("{path}: {e}"));
     }
 
     pub fn clear_screen(&self) {

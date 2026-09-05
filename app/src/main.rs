@@ -278,6 +278,7 @@ fn main() {
     kiddos_cart::register(&kernel);
     kiddos_wasm::register(&kernel);
     kiddos_vi::register(&kernel);
+    kiddos_arm::register(&kernel);
     kiddos_tutor::Tutor::install(&kernel);
     kernel.log("boot");
     let init = kernel.boot();

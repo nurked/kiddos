@@ -21,6 +21,7 @@ kiddos-basic.workspace = true
 kiddos-cart.workspace = true
 kiddos-wasm.workspace = true
 kiddos-vi.workspace = true
+kiddos-arm.workspace = true
 kiddos-render.workspace = true
 kiddos-host.workspace = true
 winit.workspace = true

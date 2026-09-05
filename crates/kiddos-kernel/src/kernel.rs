@@ -478,11 +478,19 @@ impl Kernel {
                 return Err(SpawnError::NotExecutable(path));
             }
             let data = vfs.read(&path, &actor)?;
-            if data.starts_with(b"\0asm") {
-                let Some(cmd) = self.command("wasm") else {
-                    return Err(SpawnError::NotFound("wasm".into()));
+            // compiled programs: wasm modules and assembled ARM images
+            let binary = if data.starts_with(b"\0asm") {
+                Some("wasm")
+            } else if data.starts_with(b"\0arm") {
+                Some("arm")
+            } else {
+                None
+            };
+            if let Some(interp) = binary {
+                let Some(cmd) = self.command(interp) else {
+                    return Err(SpawnError::NotFound(interp.into()));
                 };
-                let mut full = vec!["wasm".to_string(), path];
+                let mut full = vec![interp.to_string(), path];
                 full.extend(argv.iter().skip(1).cloned());
                 return Ok((cmd, full));
             }
