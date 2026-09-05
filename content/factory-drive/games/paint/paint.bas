@@ -82,6 +82,8 @@ RETURN
 
 ' ---- the hue bar and help line at the bottom -------------------------
 @bar
+COLOR 0
+GFX_RECTF 0, 180, 319, 191
 FOR i = 0 TO 15
     COLOR i
     GFX_RECTF i * 12, 182, i * 12 + 10, 190

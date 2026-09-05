@@ -299,8 +299,13 @@ fn paint_paints_saves_and_loads() {
     m.key(Key::Char('x'));
     m.key(Key::Left);
     assert_eq!(front(&m, 33 * 5 + 2, 18 * 5 + 2), 0);
-    // the color bar and help line are there
+    // the color bar and help line are there, and the white box moved from 4
     assert_eq!(front(&m, 4 * 12 + 5, 186), 4);
+    assert_eq!(front(&m, 4 * 12 - 1, 186), 15, "outline around the chosen color");
+    m.key(Key::Char('5'));
+    assert_eq!(front(&m, 5 * 12 - 1, 186), 15);
+    assert_eq!(front(&m, 4 * 12 - 1, 186), 0, "old outline must be gone");
+    m.key(Key::Char('4'));
     m.key(Key::Char('s'));
     m.key(Key::Char('n'));
     assert_eq!(front(&m, 32 * 5 + 2, 18 * 5 + 2), 0, "N clears");
