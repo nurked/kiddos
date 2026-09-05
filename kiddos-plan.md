@@ -198,6 +198,8 @@ kiddos/
 │   ├── kiddos-basic/           # EndBASIC bindings
 │   ├── kiddos-wasm/            # wasmtime host, kiddos import module
 │   ├── kiddos-cart/            # cartridge manifest, install, unlocks
+│   ├── kiddos-vi/              # modal editor engine, vi-quest, prison-escape
+│   ├── kiddos-arm/             # AArch64 subset VM, assembler, debugger (Phase 6)
 │   ├── kiddos-render/          # wgpu, font atlas, CRT shader
 │   ├── kiddos-host/            # winit window, TTS, audio, kiosk, paths
 │   └── kiddos-i18n/            # fluent bundles
@@ -339,7 +341,31 @@ One per builtin. Template enforced by CI: NAME, WHAT IT DOES (one sentence), TRY
 | Doom's libc surface is large | Weeks of shims | Start from doomgeneric's short platform layer; stub what Freedoom never calls; measure before adding |
 | Two modes to keep consistent | Bugs in every program | Exclusive modes: entering pixel mode saves the text screen, leaving restores it (the alt-screen path already exists) |
 
-### Phase 6 — Polish and release (4 weeks)
+### Phase 6 — ARM assembly and debug tools (4–5 weeks)
+Goal: a kid who can write BASIC and a little C gets to see the machine underneath: registers, memory, one instruction at a time. ARM because it is the CPU in the Mac, the Pi and every phone, and because AArch64 is regular enough to teach.
+
+**Figure out first (one-week spike, decisions written into §6):**
+- **Which ARM.** AArch64 user-mode subset: fixed 32-bit encodings, 31 general registers, no Thumb/ARM mode split. ~40 instructions cover teaching (`mov add sub mul udiv and orr eor lsl lsr cmp b b.cond bl ret ldr str ldrb strb adr svc`). Thumb/ARMv7 only if the subset turns out too big for kids, which I doubt.
+- **Emulate, don't run native.** KidDOS ships on x86 Windows and Linux, and even on the Mac we never run kid code on the real CPU. A `kiddos-arm` crate with our own interpreter: deterministic, single-steppable, memory-capped, and every fault message is ours ("you read from address 0, which is nothing"). Unicorn/QEMU rejected: huge, C, licensing, and no kid-grade errors. Cost of writing our own: decoder for the subset plus tests against a reference (clang `-target aarch64` output run through our VM vs. expected results).
+- **Assembler.** Our own two-pass `as` for the subset: labels, `.data`/`.text`, `.ascii`/`.byte`/`.word`, comments, friendly errors with the offending line. Output is a `\0arm` file the kernel resolves like `\0asm`, so `as hello.s && ./hello` mirrors `cc`.
+- **System calls.** `svc #0` with the Linux AArch64 convention (`x8` = number, `x0..x5` = args) mapped onto the console API from §4.3: write, read key, read line, sleep, beep, exit, fs read/write. `man syscalls` lists them. Same numbers as real Linux where one exists (64 write, 93 exit) so what a kid learns here is true outside.
+- **Debugger shape.** Not gdb's prompt. A full-screen `debug prog` with three panes: source with the current line highlighted, registers (changed ones flash), a memory window at a chosen address. Keys: step, run, breakpoint on the current line, continue, quit; a `:` line for `mem 0x1000`, `reg x0`, `break 12`. Reuse the vi engine's screen layout code, not gdb.
+- **Debugging beyond assembly.** Decide whether `debug` also steps BASIC (EndBASIC has no hooks; would need our own line tracer) and C (DWARF in wasm is a large project). Default answer: assembly only in this phase; a `trace` flag for BASIC that prints each line as it runs is cheap and worth doing; C debugging goes to Later.
+
+**Build:**
+- `kiddos-arm`: VM (registers, flags, 1 MB flat memory, cap in `cart.toml`), decoder/executor for the subset, `svc` bridge, step/breakpoint API, disassembler.
+- Commands: `as`, `debug`, `dis` (disassemble a file), `hexdump` (kid-readable bytes; useful for BASIC and C files too).
+- Content: man pages `as`, `debug`, `dis`, `hexdump`, `syscalls`, `registers`; examples `/usr/share/examples/hello.s`, `count.s`, `echo.s`; lessons 13 "What a CPU does" (step through `add`) and 14 "Find the bug" (a wrong loop bound, fix it in `edit`, run again).
+- Cartridge **bug-hunt**: eight tiny programs, each with one planted bug (off-by-one, wrong register, missing `ret`, reads before writes). The kid opens each in `debug`, finds it, fixes the source. Finishing unlocks nothing new; the reward is a badge and that `debug` now shows up in `games` hints.
+- **Exit**: v0.7. `as hello.s && ./hello` prints; `debug` steps it with registers changing on screen; bug-hunt ships.
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Subset too small for anything fun | Kids leave after hello | Pick the subset from what bug-hunt and a small game (guess-the-number in asm) actually need, then freeze it |
+| Encoding bugs in our own VM | Wrong answers teach wrong things | Differential tests: assemble with clang, run in our VM and in a known-good model, compare registers |
+| Debugger UI is a second editor to maintain | Slow phase | Share the pane/scroll code with `kiddos-vi` and `edit`; the debugger is read-only, no editing inside it |
+
+### Phase 7 — Polish and release (4 weeks)
 The rest of what used to be Phase 4:
 - Accessibility: `crt off` (done), large font, high-contrast palette, screen reader passthrough via TTS.
 - Kiosk hardening per §8 (macOS presentation options, Windows keyboard hook, Linux session), Raspberry Pi session image.
